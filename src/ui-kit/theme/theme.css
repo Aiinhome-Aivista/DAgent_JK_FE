@@ -1,0 +1,139 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Theme 1: Modern Dark (Default) */
+  --color-bg-default: #ffffff;
+  --color-surface-default: #ffffff;
+  --color-surface-hover-default: #f8fafc;
+  --color-border-default: #e2e8f0;
+  --color-text-primary-default: #0f172a;
+  --color-text-secondary-default: #475569;
+  --color-accent-default: #3b82f6;
+  --color-accent-hover-default: #2563eb;
+  --color-error-default: #ef4444;
+  --color-success-default: #10b981;
+  --color-warning-default: #f59e0b;
+
+  /* Theme 2: Warm Organic (Alternative) */
+  --color-bg-warm: #f5f5f0;
+  --color-surface-warm: #ffffff;
+  --color-surface-hover-warm: #fafaf9;
+  --color-border-warm: #e5e5e0;
+  --color-text-primary-warm: #1c1917;
+  --color-text-secondary-warm: #57534e;
+  --color-accent-warm: #5a5a40;
+  --color-accent-hover-warm: #4a4a35;
+  --color-error-warm: #ef4444;
+  --color-success-warm: #10b981;
+  --color-warning-warm: #f59e0b;
+
+  /* Dynamic Variables */
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-border: var(--border);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-error: var(--error);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+}
+
+@layer base {
+
+  :root,
+  .theme-default {
+    --bg: var(--color-bg-default);
+    --surface: var(--color-surface-default);
+    --surface-hover: var(--color-surface-hover-default);
+    --border: var(--color-border-default);
+    --text-primary: var(--color-text-primary-default);
+    --text-secondary: var(--color-text-secondary-default);
+    --accent: var(--color-accent-default);
+    --accent-hover: var(--color-accent-hover-default);
+    --error: var(--color-error-default);
+    --success: var(--color-success-default);
+    --warning: var(--color-warning-default);
+  }
+
+  .theme-warm {
+    --bg: var(--color-bg-warm);
+    --surface: var(--color-surface-warm);
+    --surface-hover: var(--color-surface-hover-warm);
+    --border: var(--color-border-warm);
+    --text-primary: var(--color-text-primary-warm);
+    --text-secondary: var(--color-text-secondary-warm);
+    --accent: var(--color-accent-warm);
+    --accent-hover: var(--color-accent-hover-warm);
+    --error: var(--color-error-warm);
+    --success: var(--color-success-warm);
+    --warning: var(--color-warning-warm);
+  }
+
+  .theme-landing {
+    --bg: #ffffff;
+    --surface: #ffffff;
+    --surface-hover: #f8fafc;
+    --border: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --error: #ef4444;
+    --success: #10b981;
+    --warning: #f59e0b;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    opacity: 0.2;
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+    opacity: 0.4;
+  }
+
+  .custom-h-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .custom-h-scrollbar::-webkit-scrollbar {
+    height: 5px;
+  }
+
+  .custom-h-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-h-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  .custom-h-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}

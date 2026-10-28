@@ -1,0 +1,5 @@
+{
+  "name": "DAgent",
+  "description": "A React application demonstrating modular feature-based architecture with theme switching and a reusable UI kit.",
+  "requestFramePermissions": []
+}

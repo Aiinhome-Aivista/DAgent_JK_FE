@@ -1,0 +1,529 @@
+১. এডমিন প্যানেল এবং ইউজার ম্যানেজমেন্ট ফ্লো
+নতুন ইউজার যুক্ত করা (Add User):
+Workspace Admin (role_id = 2) প্রথমে create_user_controller (
+
+connector_controllers.py
+) ব্যবহার করে সিস্টেমে সাধারণ ব্যবহারকারীদের (Standard Users - role_id = 1) যুক্ত করতে পারেন।
+ওয়ার্কস্পেস তৈরি ও অ্যাসাইন (Workspace Creation & Assignment):
+এডমিন একটি প্রজেক্টের জন্য Workspace তৈরি করেন (
+
+create_workspace_controller
+)।
+এরপর তিনি assign_workspace_users_controller (
+
+connector_controllers.py
+) দিয়ে ওই ওয়ার্কস্পেসে সাধারণ ইউজারদের অ্যাসাইন করেন।
+২. ইউজার লগইন এবং কানেক্টর তৈরি
+ইউজার লগইন: ইউজার সিস্টেমে লগইন করার সাথে সাথে তার জন্য একটি ডেডিকেটেড পার্সোনাল ডাটাবেজ (যেমন: user_arif_db) তৈরি হয়ে যায় (
+
+user_db_service.py
+)।
+কানেক্টর তৈরি (Create Connectors): ইউজার তার ওয়ার্কস্পেসে প্রবেশ করে MySQL, SQL Server, Snowflake বা Google Sheets এর মতো বিভিন্ন সোর্স কানেক্ট করেন (
+
+create_connector_controllers
+)।
+CSV ফাইল আপলোড: ইউজার কোনো বড় CSV ফাইল আপলোড করলে ব্যাকগ্রাউন্ড শিডিউলারে তা প্রসেস হয়ে ইউজারের নিজস্ব ডেডিকেটেড ডাটাবেজে টেবিল আকারে জমা হয় (
+
+uploads_controller.py
+)।
+৩. নলেজ গ্রাফ প্রসেসিং (Knowledge Graph Processing)
+যখন কোনো ইউজার ডকুমেন্ট/পিডিএফ বা ডাটাবেজ সোর্স বিশ্লেষণ করতে দেন:
+
+LLM Extraction: process_books (
+
+orchestrator_controller.py
+) ফাংশনটি কল হয়। এটি ডাটা থেকে গুরুত্বপূর্ণ টপিক (Topics) এবং তাদের ভেতরের সম্পর্ক (Connections) এক্সট্র্যাক্ট করে।
+ArangoDB স্টোরেজ: এই নোড ও এজ সম্পর্কগুলো ArangoDB-র Books, Topics, এবং has_topic কালেকশনে গ্রাফ ডেটা হিসেবে জমা হয়।
+PyVis Graph (ভিজ্যুয়ালাইজেশন): PyVis ব্যবহার করে ব্যাকএন্ড একটি ইন্টারেক্টিভ ডার্ক-মোড গ্রাফ এইচটিএমএল পেজ তৈরি করে এবং সেটি /graphs/ ডিরেক্টরিতে সেভ করে। এখানে কালার কোড অনুযায়ী নোডগুলো দেখা যায়:
+Teal (#00bfa5): Books (উৎস ফাইল)
+Pink (#ff4081): Topics (উত্থিত বিষয়বস্তু)
+Blue (#2979ff): Common Topics (একাধিক ডকুমেন্টের মধ্যকার সাধারণ সেতু)
+৪. ভেক্টর ডাটাবেজ এবং আরএজি চ্যাট (Vector DB & RAG Chat)
+ইউজার যখন চ্যাট বক্সে প্রশ্ন করেন, তখন session_rag_chat_controller (
+
+
+
+session_rag_chat_controller.py
+) কল হয়:
+
+ভেক্টর ডাটাবেজ (ChromaDB): সিস্টেমে পূর্বে সেভ হওয়া ডাটার ভেক্টর এমবেডিং ও সেমান্টিক মিল খোঁজার জন্য ChromaDB ব্যবহার করা হয়। (এমবেডিংয়ের জন্য SentenceTransformer("all-MiniLM-L6-v2") মডেল লোড হয়)।
+BM25 কিওয়ার্ড সার্চ: একই সাথে কিওয়ার্ড ভিত্তিক অনুসন্ধানের জন্য BM25 ব্যবহার করা হয়।
+ক্রস-এনকোডার রি-র‍্যাংকিং (Reranking): ChromaDB এবং BM25 থেকে পাওয়া সেরা ৪০টি ডক্যুমেন্টকে ms-marco-MiniLM-L-6-v2 ক্রস-এনকোডার দিয়ে রি-র‍্যাঙ্ক করে নিখুঁততম ২০টি ডক্যুমেন্ট ছেঁকে আনা হয়।
+Mistral LLM জেনারেশন: সবশেষে প্রাসঙ্গিক ডাটাগুলো Mistral LLM-এ পাঠানো হয়, যা অ্যানালিস্ট-গ্রেড উত্তর, পরবর্তী সম্ভাব্য প্রশ্ন (Follow-up Questions) এবং চার্ট ডেটা (Bar Chart, Pie Chart, Table) রেসপন্স হিসেবে জেনারেট করে।
+
+
+
+
+
+================================================================================
+TRAVERSEAI / AGENTIC ENGINE - SYSTEM ARCHITECTURE & USER WORKFLOW BRIEF
+================================================================================
+
+This document provides a comprehensive technical overview of the TraverseAi 
+Backend application, mapping out the entire system lifecycle, user management flows, 
+database connections, background data processing, Knowledge Graphs, and Vector RAG Chat.
+
+--------------------------------------------------------------------------------
+১. মূল সিস্টেম ফ্লো ও ইউজার লাইফসাইকেল (Core System Flow & User Lifecycle)
+--------------------------------------------------------------------------------
+অ্যাপ্লিকেশনটির কাজের প্রবাহ নিচে ৫টি ধাপে ব্যাখ্যা করা হলো:
+
+ধাপ ১: এডমিন প্যানেল ও ইউজার তৈরি (Admin User Creation)
+  * সিস্টেমে দুই ধরণের এডমিন বা ম্যানেজমেন্ট লেভেল রয়েছে:
+    ক) Staff Users (Super Admin/Admin/Expert): যারা সিস্টেমে প্রবেশ করে ক্যাপচা ভ্যালিডেশন 
+       এবং পাসওয়ার্ড হ্যাশ চেক করে। এরা এন্টারপ্রাইজ ম্যানেজমেন্ট দেখাশোনা করে।
+    খ) Workspace Admin (users table, role_id = 2): এরা সাধারণ ইউজারদের (role_id = 1) 
+       অ্যাকাউন্ট তৈরি করতে পারে। `create_user_controller` (POST /create_user) ব্যবহার করে 
+       তারা নতুন নাম, ইমেইল ও পাসওয়ার্ড দিয়ে গ্রাহকদের রেজিস্ট্রেশন করিয়ে দেয়।
+
+ধাপ ২: ওয়ার্কস্পেস তৈরি ও ইউজার অ্যাসাইন (Workspace & User Assignment)
+  * Workspace Admin তার প্রয়োজনীয় প্রজেক্টের জন্য একটি Workspace তৈরি করে 
+    `create_workspace_controller` (POST /create_workspace) এর মাধ্যমে।
+  * এরপর সে তার টিমে অন্য ব্যবহারকারীদের (role_id = 1) ওই নির্দিষ্ট ওয়ার্কস্পেসে 
+    যুক্ত করে `assign_workspace_users_controller` (POST /assign_workspace_users) ব্যবহার করে।
+  * এর ফলে একটি ম্যাপিং টেবিল (workspace_users) তৈরি হয়, যা নিশ্চিত করে কোন ইউজার কোন প্রজেক্টের 
+    ডেটা বা ডাটাবেজ এক্সেস করতে পারবে।
+
+ধাপ ৩: ইউজার লগইন এবং কানেক্টর তৈরি (User Login & Connectors Setup)
+  * সাধারণ ব্যবহারকারীরা অ্যাপে লগইন করে। প্রথমবার লগইনের সময় তাদের জন্য সিস্টেমে একটি 
+    ব্যক্তিগত ডাটাবেজ (যেমন: user_arif_db) স্বয়ংক্রিয়ভাবে তৈরি হয়ে যায়।
+  * ইউজার যখন কোনো ওয়ার্কস্পেসে প্রবেশ করে, সে তার বিভিন্ন এক্সটার্নাল সোর্সের সাথে 
+    কানেকশন তৈরি করতে পারে (যেমন: MySQL, Microsoft SQL Server, Snowflake, Google Sheets, 
+    অথবা Web Search) `create_connector_controllers` (POST /create_connectors) এপিআই দিয়ে।
+  * কানেক্টরগুলোর ডিটেইলস এবং সেশন তথ্য `connection_history` ও `database_credential` 
+    টেবিলে ভেরিফাইড ক্রেডেনশিয়ালসহ সেভ করা হয়।
+  * ব্যবহারকারীরা বড় সাইজের CSV ফাইল আপলোড করলে ব্যাকএন্ডের background scheduler তা প্রসেস করে 
+    ইউজারের ডেডিকেটেড লোকাল ডাটাবেজে টেবিল হিসেবে সেভ করে।
+
+ধাপ ৪: নলেজ গ্রাফ প্রসেসিং ও ভিজ্যুয়ালাইজেশন (Knowledge Graph Processing)
+  * ইউজার যদি কোনো পিডিএফ, বই বা ডাটাবেজ কুয়েরির ডেটা আপলোড করে `process_books` (POST /upload) 
+    এপিআইতে পাঠান, ব্যাকএন্ড system একটি চমৎকার Knowledge Graph তৈরি করে:
+    ক) LLM Analysis: প্রথমে AI মডেল ডেটা থেকে গুরুত্বপূর্ণ টপিক (Topics) এবং তাদের ভেতরের 
+       পারস্পরিক সম্পর্ক (Connections) খুঁজে বের করে।
+    খ) ArangoDB Graph Ingestion: সম্পর্কগুলো ArangoDB গ্রাফ ডাটাবেজে রিলেশনাল ডকুমেন্ট ও 
+       এজ হিসেবে স্টোর করা হয় (Books, Topics, has_topic collections)।
+    г) PyVis Interactive Graph: ব্যাকএন্ড PyVis লাইব্রেরি দিয়ে একটি সুন্দর ইন্টারেক্টিভ 
+       এইচটিএমএল (HTML) গ্রাফ পেজ জেনারেট করে যা `/graphs/<filename>` লিংকে সেভ হয়। 
+       এখানে বুক নোড (Teal), নরমাল টপিক (Pink), এবং কমন টপিক ব্রিজ (Blue) কালার-কোড আকারে 
+       সাজানো থাকে।
+
+ধাপ ৫: ভেক্টর ডাটাবেজ ও আরএজি চ্যাট (Vector DB & RAG Chat Engine)
+  * ইউজার যখন চ্যাটবক্সে প্রশ্ন করেন, তখন `session_rag_chat_controller` (POST /session-chat) 
+    কল হয় যা একটি হাইব্রিড রিট্রিভাল মডেল (Hybrid Retrieval Model) ব্যবহার করে:
+    ক) SentenceTransformer: এটি প্রথমে ইউজারের প্রশ্নকে ভেক্টর এমবেডিংয়ে রূপান্তর করে।
+    খ) Vector DB (ChromaDB): ChromaDB-তে সংরক্ষিত পূর্বেকার ডকুমেন্টের ভেক্টর এমবেডিংয়ের সাথে 
+       ইউজারের প্রশ্নের সিমিলারিটি সার্চ (Similarity Search) করা হয়।
+    গ) BM25 Keyword Search: কিওয়ার্ডভিত্তিক সার্চ করা হয় যাতে কোনো নির্দিষ্ট টার্ম বাদ না যায়।
+    ঘ) Cross-Encoder Reranker: ChromaDB ও BM25 থেকে সংগৃহীত সেরা ৪০টি ডেটা রো-কে 
+       `ms-marco-MiniLM-L-6-v2` মডেল ব্যবহার করে রি-র‍্যাঙ্ক (Rerank) করে টপ ২০টি মোস্ট 
+       রিলেভেন্ট ইনফরমেশন ফিল্টার করে আনা হয়।
+    ঙ) Answer & Visualizations: এই ইনফরমেশনগুলো সিস্টেমে সাজিয়ে Mistral LLM-এ পাঠানো হয়। 
+       LLM একটি অ্যানালিস্ট-গ্রেড উত্তর, পরবর্তী সম্ভাব্য প্রশ্নের পরামর্শ (Follow-up Questions) 
+       এবং চার্ট ডেটা (Bar, Line, Pie) জেনারেট করে যা ফ্রন্টএন্ডে সুন্দরভাবে রেন্ডার হয়।
+    চ) Turn History: পুরো কথোপকথনটি `session_chat_history` টেবিলে টার্ন ইনডেক্স অনুযায়ী 
+       স্বয়ংক্রিয়ভাবে সংরক্ষিত হতে থাকে।
+
+--------------------------------------------------------------------------------
+PART 1: ADMIN & STAFF PANEL FUNCTIONS (এডমিন ও স্টাফ প্যানেল)
+================================================================================
+
+১. generate_captcha_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): এডমিন/স্টাফ লগইনের সময় বট বা স্প্যাম রোধ করার জন্য একটি ইউনিক CAPTCHA 
+  ইমেজ এবং একটি Captcha ID তৈরি করে।
+* Endpoint: GET /generate_captcha
+* Input (ইনপুট): কোনো রিকোয়েস্ট বডি লাগে না।
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "captcha_id": "8f8303f2-1b12-4217-b76b-312a7d4a4d6f",
+    "captcha_image": "data:image/png;base64,iVBORw0KGgoAAAANSU..." (Base64 string)
+  }
+* Example (উদাহরণ): যখন কোনো এডমিন লগইন পেজে ঢুকবে, ব্যাকএন্ড থেকে একটি র্যান্ডম চার-পাঁচ অক্ষরের 
+  কোড (যেমন: "A7B9") তৈরি হবে। এর ইমেজ এবং একটি সিক্রেট আইডি ফ্রন্টএন্ডে পাঠানো হবে যাতে ইউজার 
+  সেটি দেখে টাইপ করতে পারে।
+
+২. staff_login_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): Super Admin, Admin, বা Expert-দের সিস্টেমে ভেরিফাই করে প্রবেশ করতে দেয়। 
+  এটি পাসওয়ার্ড হ্যাশ চেক করে এবং CAPTCHA সঠিক কিনা তা নিশ্চিত করে একটি JWT টোকেন প্রদান করে।
+* Endpoint: POST /admin_expert_login
+* Input (ইনপুট):
+  {
+    "email": "superadmin@traverseai.com",
+    "password": "SecurePassword123",
+    "captchaId": "8f8303f2-1b12-4217-b76b-312a7d4a4d6f",
+    "captchaValue": "A7B9"
+  }
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "statusCode": 200,
+    "message": "Login successful",
+    "data": {
+      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "role": "super_admin",
+      "username": "super_admin_traverse",
+      "full_name": "Main Super Admin"
+    }
+  }
+* Example (উদাহরণ): একজন Super Admin তার ইমেইল, পাসওয়ার্ড এবং স্ক্রিনে দেখানো ক্যাপচা দিয়ে 
+  লগইন বাটনে ক্লিক করলে সিস্টেমে ক্যাপচা ভ্যালিডেশন হবে এবং পাসওয়ার্ড মিললে তাকে একটি ১ দিন মেয়াদী 
+  JWT টোকেন দেওয়া হবে যা দিয়ে সে পরবর্তী সিকিউরড এপিআইগুলো ব্যবহার করতে পারবে।
+
+৩. create_staff_account_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): নতুন স্টাফ অ্যাকাউন্ট (যেমন: অন্য কোনো এডমিন বা ডাটা অ্যানালিস্ট এক্সপার্ট) 
+  তৈরি করার জন্য। এটি সাধারণত Super Admin দ্বারা চালিত হয়।
+* Endpoint: POST /admin_expert_registration
+* Input (ইনপুট):
+  {
+    "username": "expert_rahim",
+    "email": "rahim@traverseai.com",
+    "password": "ExpertPass@2026",
+    "role": "expert",
+    "full_name": "Rahim Uddin"
+  }
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "message": "New expert account created successfully"
+  }
+* Example (উদাহরণ): কোম্পানির নতুন ডাটা এক্সপার্ট রহিম সাহেবের জন্য একটি অ্যাকাউন্ট তৈরি করার 
+  জন্য সুপার এডমিন এই ফাংশনটি কল করবে। পাসওয়ার্ডটি সরাসরি ডেটাবেজে সেভ না হয়ে হ্যাশ (Hash) 
+  আকারে সিকিউরডভাবে সেভ হবে।
+
+৪. get_all_staff_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): সিস্টেমে কতজন এডমিন, সুপার এডমিন বা এক্সপার্ট কর্মরত আছেন তাদের তালিকা দেখার জন্য।
+* Endpoint: GET /admin_expert_list
+* Input (ইনপুট): কোনো রিকোয়েস্ট বডি লাগে না।
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "statusCode": 200,
+    "count": 2,
+    "data": [
+      {
+        "id": 1,
+        "full_name": "Main Super Admin",
+        "username": "super_admin_traverse",
+        "email": "superadmin@traverseai.com",
+        "role": "super_admin",
+        "created_at": "Wed, 03 Jun 2026 12:00:00 GMT"
+      },
+      {
+        "id": 2,
+        "full_name": "Rahim Uddin",
+        "username": "expert_rahim",
+        "email": "rahim@traverseai.com",
+        "role": "expert",
+        "created_at": "Wed, 03 Jun 2026 15:30:00 GMT"
+      }
+    ]
+  }
+* Example (উদাহরণ): সুপার এডমিন প্যানেলের "Manage Staff" সেকশনে গেলে ব্যাকএন্ড থেকে কর্মরত সকল 
+  স্টাফ মেম্বারদের লিস্ট এই ফাংশনটির মাধ্যমে রেন্ডার করা হয়।
+
+
+================================================================================
+PART 2: NORMAL USER APPLICATION FUNCTIONS (ইউজার অ্যাপ্লিকেশন)
+================================================================================
+
+১. register_user_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): অ্যাপ্লিকেশনে সাধারণ গ্রাহক বা নতুন ক্লায়েন্টদের অ্যাকাউন্ট রেজিস্ট্রেশন করা।
+* Endpoint: POST /register
+* Input (ইনপুট):
+  {
+    "name": "Arif Chowdhury",
+    "email": "arif@company.com",
+    "password": "ArifPassword@2026"
+  }
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "message": "User registered successfully",
+    "user": {
+      "id": 15,
+      "name": "Arif Chowdhury",
+      "email": "arif@company.com"
+    }
+  }
+* Example (উদাহরণ): একজন নতুন ব্যবহারকারী সাইন-আপ ফর্মে নাম, ইমেইল এবং পাসওয়ার্ড লিখে সাবমিট 
+  করলে এই ফাংশনটি ডেটাবেজে তার জন্য একটি ইউজার অ্যাকাউন্ট তৈরি করে।
+
+২. login (User Login)
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): সাধারণ ব্যবহারকারীদের সিস্টেমে প্রবেশ করতে দেয়। লগইন সফল হলে 
+  ব্যবহারকারীর ইমেইল অনুযায়ী একটি ডেডিকেটেড লোকাল ডাটাবেজ (যেমন: user_arif_db) 
+  স্বয়ংক্রিয়ভাবে তৈরি করে (যদি আগে তৈরি না করা থাকে)।
+* Endpoint: POST /login
+* Input (ইনপুট):
+  {
+    "email": "arif@company.com",
+    "password": "ArifPassword@2026"
+  }
+* Output (আউটপুট):
+  {
+    "status": true,
+    "statuscode": 200,
+    "data": {
+      "user_id": 15,
+      "name": "Arif Chowdhury",
+      "user_database": "user_arif_db",
+      "role_id": 2,
+      "role_name": "Workspace Admin"
+    },
+    "msg": "User database already exists" 
+  }
+* Example (উদাহরণ): আরিফ সাহেব যখন প্রথমবার লগইন করবেন, সিস্টেম তার জন্য MySQL-এ 
+  "user_arif_db" নামে একটি সম্পূর্ণ আলাদা ফাঁকা ডাটাবেজ তৈরি করে দিবে। ভবিষ্যতে সে যে ফাইল 
+  বা ডেটা আপলোড করবে তা এই ডেডিকেটেড ডাটাবেজেই জমা হবে।
+
+৩. create_workspace_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): কাজের সুবিধার জন্য প্রজেক্টভিত্তিক আলাদা পরিবেশ বা Workspace তৈরি করা। 
+  সিস্টেম অনুযায়ী শুধুমাত্র Workspace Admin (role_id = 2) নতুন ওয়ার্কস্পেস তৈরি করতে পারে।
+* Endpoint: POST /create_workspace
+* Input (ইনপুট):
+  {
+    "user_id": 15,
+    "workspace_name": "Sales Analytics 2026"
+  }
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "message": "Workspace created successfully",
+    "workspace_id": 5,
+    "session_id": "d748f219-c09a-4db5-b8a7-a9a35e4d2bfb",
+    "workspace_name": "Sales Analytics 2026"
+  }
+* Example (উদাহরণ): আরিফ সাহেব তার কোম্পানির বিক্রয় বিশ্লেষণের জন্য "Sales Analytics 2026" 
+  নামে একটি প্রজেক্ট ফোল্ডার বা ওয়ার্কস্পেস তৈরি করলেন। এই ওয়ার্কস্পেসের জন্য একটি ইউনিক 
+  `session_id` জেনারেট হবে।
+
+৪. get_all_users_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): সিস্টেমের সাধারণ ব্যবহারকারীদের (Standard Users - role_id = 1) তালিকা 
+  নিয়ে আসা, যাতে তাদের কোনো ওয়ার্কস্পেসে অ্যাসাইন (Assign) করা যায়।
+* Endpoint: GET /users
+* Input (ইনপুট): কোনো রিকোয়েস্ট বডি লাগে না।
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "statuscode": 200,
+    "total": 1,
+    "users": [
+      {
+        "id": 22,
+        "name": "Kamal Ahmed",
+        "email": "kamal@company.com",
+        "created_at": "Wed, 03 Jun 2026 14:10:00 GMT"
+      }
+    ]
+  }
+* Example (উদাহরণ): ওয়ার্কস্পেসের মালিক আরিফ সাহেব তার প্রজেক্টে মেম্বার যোগ করতে চান। তখন 
+  সিস্টেমের মেম্বার লিস্ট থেকে কামাল আহমেদকে দেখানোর জন্য ব্যাকএন্ড এই ফাংশনটি কল করে।
+
+৫. assign_workspace_users_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): ওয়ার্কস্পেসের মালিক এডমিন অন্য কোনো সাধারণ ব্যবহারকারীকে তার ওয়ার্কস্পেসে 
+  অ্যাসাইন বা যুক্ত করতে পারেন যাতে সেও ওই ওয়ার্কস্পেসের ডেটা নিয়ে কাজ করতে পারে।
+* Endpoint: POST /assign_workspace_users
+* Input (ইনপুট):
+  {
+    "admin_id": 15,
+    "workspace_id": 5,
+    "user_ids": [22]
+  }
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "message": "User assignment completed.",
+    "workspace_id": 5,
+    "session_id": "d748f219-c09a-4db5-b8a7-a9a35e4d2bfb",
+    "workspace_name": "Sales Analytics 2026",
+    "newly_assigned": [22],
+    "already_assigned": []
+  }
+* Example (উদাহরণ): আরিফ সাহেব (ID: 15) তার তৈরি করা "Sales Analytics 2026" ওয়ার্কস্পেসে (ID: 5) 
+  কামাল আহমেদকে (ID: 22) যুক্ত করলেন। এখন কামালও ওই ওয়ার্কস্পেসের অ্যাক্সেস পাবেন।
+
+৬. get_workspace_users_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): একটি নির্দিষ্ট ওয়ার্কস্পেসে বর্তমানে কতজন ইউজার যুক্ত আছেন তাদের দেখতে পাওয়া।
+* Endpoint: POST /workspace_users
+* Input (ইনপুট):
+  {
+    "workspace_id": 5
+  }
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "statuscode": 200,
+    "workspace_id": 5,
+    "assigned_users": [
+      {
+        "id": 22,
+        "name": "Kamal Ahmed",
+        "email": "kamal@company.com",
+        "assigned_at": "2026-06-03T16:00:00Z"
+      }
+    ]
+  }
+* Example (উদাহরণ): আরিফ সাহেব ওয়ার্কস্পেস সেটিংস পেজে গিয়ে দেখতে চান তার টিমে কে কে আছে, তখন 
+  এই ফাংশনটি কল হয়ে কামাল আহমেদের নাম ও ডিটেইলস দেখাবে।
+
+৭. remove_workspace_user_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): কোনো ব্যবহারকারীকে ওয়ার্কস্পেস থেকে সরিয়ে দেওয়া বা রিমুভ করা।
+* Endpoint: DELETE /remove_workspace_user
+* Input (ইনপুট):
+  {
+    "admin_id": 15,
+    "workspace_id": 5,
+    "user_id": 22
+  }
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "message": "User 22 removed from workspace 5 successfully."
+  }
+* Example (উদাহরণ): প্রজেক্টের কাজ শেষ হয়ে যাওয়ায় আরিফ সাহেব কামাল আহমেদকে (ID: 22) এই 
+  ওয়ার্কস্পেস থেকে রিমুভ করে দিলেন। এরপর থেকে কামাল আর এই প্রজেক্টের ডেটা দেখতে পাবেন না।
+
+৮. create_connector_controllers
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): ওয়ার্কস্পেসের ভেতরে বিভিন্ন ধরণের এক্সটার্নাল ডেটা সোর্স (যেমন: MySQL, 
+  MSSQL, Snowflake, Google Sheets, অথবা Web Search) কানেক্ট করা। এটি কানেকশন টেস্ট করে সফল 
+  হলে ডেটাবেজে কানেকশন হিস্ট্রি এবং ক্রেডেনশিয়াল সেভ করে।
+* Endpoint: POST /create_connectors
+* Input (ইনপুট):
+  {
+    "user_id": 15,
+    "session_id": "d748f219-c09a-4db5-b8a7-a9a35e4d2bfb",
+    "type": "mysql",
+    "name": "Production Database",
+    "host": "192.168.1.50",
+    "port": 3306,
+    "username": "db_user",
+    "password": "db_password",
+    "database": "production_sales"
+  }
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "message": "Successfully connected to mysql database: Production Database",
+    "session_id": "d748f219-c09a-4db5-b8a7-a9a35e4d2bfb"
+  }
+* Example (উদাহরণ): আরিফ সাহেব তার কোম্পানির আসল ডেটাবেজের সাথে TraverseAi কানেক্ট করতে 
+  চান। সে ডাটাবেজ টাইপ MySQL সিলেক্ট করে হোস্ট ও পাসওয়ার্ড দিয়ে "Connect" চাপলে ব্যাকএন্ড 
+  কানেকশন টেস্ট করবে। কানেকশন সফল হলে তা সেভ করে রাখবে।
+
+৯. get_connection_history_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): একটি নির্দিষ্ট ওয়ার্কস্পেস সেশনে এ পর্যন্ত কতগুলো এক্সটার্নাল ডাটাবেজ 
+  কানেক্ট করা হয়েছে, বা কী কী ফাইল আপলোড করা হয়েছে, অথবা কী কী ওয়েব সার্চ রেজাল্ট সেভ 
+  হয়েছে তার ক্রনোলজিক্যাল (Chronological) ইতিহাস বা টাইমলাইন দেখায়।
+* Endpoint: GET /connection_history?session_id=d748f219-c09a-4db5-b8a7-a9a35e4d2bfb
+* Input (ইনপুট): URL কুয়েরি প্যারামিটার হিসেবে `session_id` পাঠাতে হয়।
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "statuscode": 200,
+    "history": [
+      {
+        "id": "12",
+        "sessionId": "d748f219-c09a-4db5-b8a7-a9a35e4d2bfb",
+        "date": "2026-06-03T16:20:00Z",
+        "action": "Connected to Production Database",
+        "connectionName": "Production Database",
+        "db_type": "mysql",
+        "topic": "",
+        "status": "completed"
+      }
+    ]
+  }
+* Example (উদাহরণ): ব্যবহারকারী যখন তার ওয়ার্কস্পেসের ড্যাশবোর্ডে প্রবেশ করে, তখন সে বামপাশের 
+  মেন্যুতে বা টাইমলাইনে দেখতে পায় যে সে কখন কোন ডাটাবেজ বা ফাইল যুক্ত করেছিল।
+
+১০. upload_csv_controller (এবং upload_chunk_controller)
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): ব্যবহারকারীর লোকাল কম্পিউটার থেকে বড় সাইজের CSV ফাইল আপলোড করা। বড় ফাইলের 
+  ক্ষেত্রে এটি চাঙ্ক (Chunk) আকারে আপলোড নেয় এবং ব্যাকগ্রাউন্ড টাস্ক শিডিউলারের (Background Scheduler) 
+  সাহায্যে ব্যাকগ্রাউন্ডে প্রসেস করে ব্যবহারকারীর নিজস্ব ডেডিকেটেড ডাটাবেজে (যেমন: user_arif_db) 
+  টেবিল হিসেবে সেভ করে।
+* Endpoint: POST /upload_csv (অথবা /upload_chunk)
+* Input (ইনপুট): FormData হিসেবে `user_id`, `session_id`, এবং `files` (ফাইল অবজেক্ট) পাঠানো হয়।
+* Output (আউটপুট):
+  {
+    "status": "accepted",
+    "message": "CSV upload scheduled for processing",
+    "files": 1
+  }
+* Example (উদাহরণ): আরিফ সাহেব তার কম্পিউটারে থাকা ১ লাখ লাইনের একটি "customers.csv" ফাইল 
+  আপলোড দিলেন। ব্যাকএন্ড সাথে সাথে রেসপন্স দিয়ে বলবে আপলোড সফল হয়েছে এবং ব্যাকগ্রাউন্ডে ফাইলটি 
+  রিড করে `user_arif_db`-তে `customers` নামে টেবিল বানিয়ে সব ডেটা পুশ করে দিবে।
+
+১১. session_rag_chat_controller
+--------------------------------------------------------------
+* Purpose (উদ্দেশ্য): এটি হচ্ছে TraverseAi-এর মূল AI ইঞ্জিন। ইউজার যখন চ্যাট বক্সে নিজের ডাটাবেজ 
+  সম্পর্কে কোনো প্রশ্ন করেন (যেমন: "আমাদের টোটাল সেলস কত?"), তখন এটি নিচের ৩টি ধাপ অনুসরণ করে:
+  ১. Query Understanding: ইউজারের প্রশ্ন বুঝে প্রয়োজনীয় টেবিল ও ইন্টেন্ট ফিল্টার করে।
+  ২. Hybrid Retrieval: ChromaDB ভেক্টর ডাটাবেজ এবং BM25 কিওয়ার্ড সার্চ ব্যবহার করে সবচেয়ে 
+     প্রাসঙ্গিক ডেটা রো (Data Rows) খুঁজে বের করে।
+  ৩. Cross-Encoder Reranking: খুঁজে পাওয়া সেরা ৪০টি ডেটা রো-কে রি-র‍্যাঙ্ক (Rerank) করে সেরা 
+     ২০টি ডেটা বেছে নেয় এবং Mistral LLM-এর মাধ্যমে নিখুঁত উত্তর তৈরি করে। এটি ডেটার উপর ভিত্তি 
+     করে চার্ট (Bar, Line, Pie) বা টেবিল ভিজ্যুয়ালাইজেশনও তৈরি করতে পারে।
+* Endpoint: POST /session-chat
+* Input (ইনপুট):
+  {
+    "session_id": "d748f219-c09a-4db5-b8a7-a9a35e4d2bfb",
+    "user_id": 15,
+    "question": "Show a bar chart of sales by product category",
+    "chat_history": []
+  }
+* Output (আউটপুট):
+  {
+    "status": "success",
+    "statusCode": 200,
+    "answer": "Here is the sales analysis broken down by product categories based on your database records.",
+    "follow_up_questions": [
+      "What is the reason behind high sales in Electronics?",
+      "Where are our lowest performing stores located?"
+    ],
+    "visualizations": [
+      {
+        "type": "bar_chart",
+        "title": "Sales by Product Category",
+        "xKey": "category",
+        "yKey": "value",
+        "data": [
+          {"category": "Electronics", "value": 45000},
+          {"category": "Clothing", "value": 28000},
+          {"category": "Home Decor", "value": 15000}
+        ]
+      }
+    ]
+  }
+* Example (উদাহরণ): আরিফ সাহেব যখন চ্যাট বক্সে লিখবেন "Show a bar chart of sales by product category", 
+  তখন সিস্টেম তার আপলোড করা ডাটাবেজ থেকে ক্যাটাগরি এবং সেলসের ডেটা প্রসেস করে এনে সুন্দর একটি 
+  Bar Chart ভিজ্যুয়ালাইজেশন ফ্রন্টএন্ডে রেন্ডার করবে এবং সাথে প্রয়োজনীয় অ্যানালাইসিস লিখে দিবে।
+
+================================================================================
+সংক্ষিপ্ত তুলনা টেবিল (Quick Comparison Table)
+================================================================================
+
+| Feature / Criteria   | Admin / Staff Panel                     | Normal User Application                   |
+|----------------------|-----------------------------------------|-------------------------------------------|
+| User Table           | `staff_users`                           | `users` (and `workspace_users`)           |
+| Password Security    | Hashed (werkzeug.security)              | Plain Text / Simple Password              |
+| Login Protection     | CAPTCHA required + JWT Token            | Session ID / Database validation          |
+| Roles                | `super_admin`, `admin`, `expert`        | Workspace Admin (2), Standard User (1)    |
+| Database Isolation   | Shared system database access           | Personal dedicated DB (`user_username_db`)|
+| Key Capabilities     | Staff management, expert review         | Workspace creation, CSV upload, RAG Chat  |
+
+================================================================================
+SUMMARY END
+================================================================================
