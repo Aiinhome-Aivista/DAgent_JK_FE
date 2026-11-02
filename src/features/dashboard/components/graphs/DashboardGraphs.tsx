@@ -1,3 +1,4 @@
+import { queuedFetch } from "./dashboardHooks";
 import React, { useState, useEffect } from "react";
 import { chatHistoryService } from "../../../../services/chatHistory.service";
 import toast from "react-hot-toast";
@@ -14,6 +15,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatChatMessage } from "../../../../utils/format";
@@ -64,6 +66,31 @@ const cleanParagraphText = (text: string) => {
     cleaned += ".";
   }
   return cleaned.trim();
+};
+
+
+const getRelativeTimeString = (dateStr?: string | null): string => {
+  if (!dateStr) return "";
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "";
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (diffInSeconds < 0) return "just now";
+    if (diffInSeconds < 60) return "just now";
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays === 1) return "yesterday";
+    if (diffInDays < 30) return `${diffInDays}d ago`;
+    const diffInMonths = Math.floor(diffInDays / 30);
+    if (diffInMonths < 12) return `${diffInMonths}mo ago`;
+    return `${Math.floor(diffInMonths / 12)}y ago`;
+  } catch {
+    return "";
+  }
 };
 
 const parseSessionData = (session: any) => {
@@ -240,6 +267,7 @@ const parseSessionData = (session: any) => {
       sectionTitles,
       badge: displayBadge,
       timeBadge,
+      createdAt: firstTurn.created_at || session.created_at || null,
     };
   } catch (e) {
     console.error("Error parsing query session data:", e);
@@ -397,7 +425,8 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
 
   if (!parsedData) return null;
 
-  const { title, sections, sectionTitles, badge, timeBadge } = parsedData;
+  const { title, sections, sectionTitles, badge, timeBadge, createdAt } = parsedData;
+  const relativeTime = getRelativeTimeString(createdAt || localStorage.getItem("default_workspace_analysis_time"));
   const execSummary = sections["Executive Summary"] || [];
   const keyInsights = sections["Key Insights"] || [];
   const recommendations = sections["Actionable Recommendations"] || [];
@@ -409,9 +438,19 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
           <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
-          <h3 className="font-bold text-slate-800 text-base leading-snug">
-            {title}
-          </h3>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <h3 className="font-bold text-slate-800 text-base leading-snug">
+              {title}
+            </h3>
+            {relativeTime && (
+              <span
+                className="inline-flex items-center text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full cursor-default select-none ml-1.5"
+                title={createdAt ? new Date(createdAt).toLocaleString() : ""}
+              >
+                {relativeTime}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -548,7 +587,7 @@ const SummaryRevisedDownloadCard = () => {
       if (retryCount === 0) setIsFetching(true);
       setError(null);
       try {
-        const res = await fetch(`${defaultConfig.baseUrl}${API_ENDPOINTS.REPORTS.EXPORT_DOMESTIC_SALES_PREVIEW}`, {
+        const res = await queuedFetch(`${defaultConfig.baseUrl}${API_ENDPOINTS.REPORTS.EXPORT_DOMESTIC_SALES_PREVIEW}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session_id: getSessionId() }),
@@ -583,8 +622,13 @@ const SummaryRevisedDownloadCard = () => {
       }
     };
 
-    fetchPreview();
-    return () => { isMounted = false; };
+    // Defer preview table call so visual charts load first in the queue
+    const timer = setTimeout(() => {
+      fetchPreview();
+    }, 1000);
+
+    return () => {
+      clearTimeout(timer); isMounted = false; };
   }, []);
 
   const handleDownload = async (e: React.MouseEvent) => {
@@ -727,40 +771,8 @@ const SummaryRevisedDownloadCard = () => {
 
 
 export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean }) => {
-  const [selectedZone, setSelectedZone] = useState<string | null>(null);
-
-  const getZoneFullName = (zone: string) => {
-    const map: Record<string, string> = {
-      'WZ': 'West Zone',
-      'EZ': 'East Zone',
-      'NZ': 'North Zone',
-      'SZ': 'South Zone',
-      'CZ': 'Central Zone'
-    };
-    return map[zone.toUpperCase()] || zone;
-  };
-
-  useEffect(() => {
-    window.dispatchEvent(new CustomEvent("zone-changed", { detail: selectedZone }));
-  }, [selectedZone]);
-
   return (
     <div className="flex flex-col gap-6 overflow-x-hidden">
-      {selectedZone && (
-        <div className="flex items-center justify-center relative py-2">
-          <h2 className="text-2xl font-bold text-slate-700 font-serif">
-            Sales Dashboard - {getZoneFullName(selectedZone)}
-          </h2>
-          <button
-            onClick={() => setSelectedZone(null)}
-            className="absolute right-4 p-2 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
-            title="Clear Filter"
-          >
-            <X className="w-5 h-5 text-slate-400 hover:text-red-500 transition-colors" />
-          </button>
-        </div>
-      )}
-
       <div className="flex flex-col gap-3">
         {/* Executive Summary Card */}
         <SummaryCard isWorkspacesLoading={isWorkspacesLoading} />
@@ -769,34 +781,31 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
         <SummaryRevisedDownloadCard />
 
         {/* Plan vs Sale & Achievement */}
-        <PlanVsSaleChartDynamic onZoneClick={(zone) => setSelectedZone(zone)} />
+        <PlanVsSaleChartDynamic />
 
         {/* Year-wise Comparison Filterable Chart */}
-        <YearComparisonChartDynamic zone={selectedZone} />
+        <YearComparisonChartDynamic />
       </div>
 
       <div className="grid grid-cols-1 gap-6">
         {/* Sales by Zone */}
-        <ZonePieChartDynamic zone={selectedZone} />
+        <ZonePieChartDynamic />
 
         {/* Top 10 Tyre Types by Sales */}
-        <TyreSalesChartDynamic zone={selectedZone} />
+        <TyreSalesChartDynamic />
 
         {/* Category Sales */}
-        <CategorySalesCardDynamic zone={selectedZone} />
+        <CategorySalesCardDynamic />
 
         {/* Actual Sales by Account Category */}
-        <AccountCategorySalesCardDynamic zone={selectedZone} />
+        <AccountCategorySalesCardDynamic />
 
-        {/* Non Billed Accounts % */}
-        <NonBilledAccountsCardDynamic zone={selectedZone} />
-
-        {/* Overdue% (as on Date) */}
-        <OverduePieChartDynamic zone={selectedZone} />
-
-        {/* Exposure % */}
-        <ExposureCardDynamic zone={selectedZone} />
+        {/* Non Billed Accounts %, Overdue%, and Exposure % hidden per requirement */}
+        {/* <NonBilledAccountsCardDynamic /> */}
+        {/* <OverduePieChartDynamic /> */}
+        {/* <ExposureCardDynamic /> */}
       </div>
     </div>
   );
 };
+

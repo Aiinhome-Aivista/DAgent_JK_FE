@@ -254,24 +254,32 @@ export const ChatWindow = ({
                         </div>
                       </div>
                       {processingSteps.length > 0 && (
-                        <div className="pl-4 border-l-2 border-[var(--border)] ml-4 mt-2 space-y-2">
-                          {processingSteps.map((step, idx) => (
-                            <motion.div
-                              key={idx}
-                              initial={{ opacity: 0, x: -10 }}
-                              animate={{ opacity: 1, x: 0 }}
-                              className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]"
-                            >
-                              {idx === processingSteps.length - 1 ? (
-                                <Loader2 className="w-3 h-3 text-[var(--accent)] animate-spin" />
-                              ) : (
-                                <div className="w-3 h-3 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                </div>
-                              )}
-                              {step}
-                            </motion.div>
-                          ))}
+                        <div className="pl-4 border-l-2 border-[var(--border)] ml-4 mt-2 space-y-2.5">
+                          {processingSteps.map((step, idx) => {
+                            const isLatest = idx === processingSteps.length - 1;
+                            return (
+                              <motion.div
+                                key={`${step}-${idx}`}
+                                initial={{ opacity: 0, x: -8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className={`flex items-center gap-2.5 text-xs font-medium transition-colors ${
+                                  isLatest
+                                    ? 'text-[var(--text-primary)]'
+                                    : 'text-[var(--text-secondary)]/70'
+                                }`}
+                              >
+                                {isLatest ? (
+                                  <Loader2 className="w-3.5 h-3.5 text-[var(--accent)] animate-spin shrink-0" />
+                                ) : (
+                                  <div className="w-3.5 h-3.5 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                  </div>
+                                )}
+                                <span>{step}</span>
+                              </motion.div>
+                            );
+                          })}
                         </div>
                       )}
                     </motion.div>

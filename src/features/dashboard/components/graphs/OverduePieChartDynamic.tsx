@@ -8,7 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
-import { useSessionId } from "./dashboardHooks";
+import {useSessionId, queuedFetch } from "./dashboardHooks";
 import { Loader2 } from "lucide-react";
 
 const renderCustomLabel = (props: any) => {
@@ -55,7 +55,7 @@ export const OverduePieChartDynamic = ({ zone }: { zone?: string | null }) => {
           return;
         }
         const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.OVERDUE_PCT}?session_id=${sessionId}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`;
-        const response = await fetch(url);
+        const response = await queuedFetch(url);
         const json = await response.json();
         
         if (json.status === "success" && json.data) {

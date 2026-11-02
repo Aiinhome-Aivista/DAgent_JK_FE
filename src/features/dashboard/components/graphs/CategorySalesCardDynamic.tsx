@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
-import { useSessionId } from "./dashboardHooks";
+import {useSessionId, queuedFetch } from "./dashboardHooks";
 
 import { Loader2 } from "lucide-react";
 
@@ -18,13 +18,13 @@ export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => 
           return;
         }
         const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.CATEGORY_SALES}?session_id=${sessionId}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`;
-        const response = await fetch(url);
+        const response = await queuedFetch(url);
         const json = await response.json();
         
         if (json.status === "success" && json.data) {
           const formattedData = json.data.map((item: any) => ({
-            title: item.category,
-            value: `${item.total_sales_cr} Cr`
+            title: item.category || item.CATEGORY || item.category_name || item.CAT_DESC || item.cat_desc || item.title || "Category",
+            value: item.total_sales_cr !== undefined ? `₹${item.total_sales_cr} Cr` : (item.value || "0 Cr")
           }));
           setData(formattedData);
         } else {
@@ -56,12 +56,12 @@ export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => 
             {data.map((item, index) => (
               <div
                 key={index}
-                className="bg-indigo-50 rounded-xl p-4 flex flex-col items-center justify-center gap-2"
+                className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-4 flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-sm transition-all"
               >
-                <span className="text-slate-800 font-bold text-lg">
+                <span className="text-indigo-950 font-bold text-lg">
                   {item.value}
                 </span>
-                <span className="text-slate-800 text-sm font-semibold text-center">
+                <span className="text-slate-600 text-xs font-semibold text-center uppercase tracking-wider">
                   {item.title}
                 </span>
               </div>

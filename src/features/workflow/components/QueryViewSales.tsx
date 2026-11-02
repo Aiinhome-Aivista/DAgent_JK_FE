@@ -36,7 +36,7 @@ export const QueryViewSales: React.FC<QueryViewSalesProps> = ({
   const { isAnalyzing } = useConnectorContext();
 
   return (
-    <div key={`layout-${workspaceType}-${sessionId}`} className="flex-1 flex overflow-hidden">
+    <div className="flex-1 flex overflow-hidden">
       {/* Left Side: Split into Charts (upper) and Chat (lower) */}
       <div className="flex-1 min-w-0 flex flex-col min-h-0">
         {/* Upper portion: Charts */}

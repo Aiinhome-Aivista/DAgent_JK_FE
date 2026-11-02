@@ -2,8 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Loader2, Save, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 import { companyService } from "../../../services/company.service";
-import { pricingService } from "../../../services/pricing.service";
-import { PricingPlan } from "../types";
 
 export type PlanType = string;
 
@@ -25,7 +23,6 @@ interface CompanyListProps {
 export const CompanyList: React.FC<CompanyListProps> = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [availablePlans, setAvailablePlans] = useState<PricingPlan[]>([]);
 
   const [formData, setFormData] = useState({
     company_name: "",
@@ -38,20 +35,10 @@ export const CompanyList: React.FC<CompanyListProps> = () => {
   const [companyId, setCompanyId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchPlans();
     fetchCompany();
   }, []);
 
-  const fetchPlans = async () => {
-    try {
-      const response = await pricingService.getPlans();
-      if (response && response.pricing) {
-        setAvailablePlans(response.pricing);
-      }
-    } catch (error) {
-      console.error("Failed to load plans:", error);
-    }
-  };
+
 
   const fetchCompany = async () => {
     setIsLoading(true);

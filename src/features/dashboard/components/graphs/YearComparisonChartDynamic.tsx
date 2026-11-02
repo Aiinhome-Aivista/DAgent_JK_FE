@@ -20,11 +20,9 @@ import {
   Area,
   Label,
 } from "recharts";
-import {
-  FilterSelect,
+import {FilterSelect,
   useAvailableYears,
-  useSessionId,
-} from "./dashboardHooks";
+  useSessionId, queuedFetch } from "./dashboardHooks";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 
 export const YearComparisonChartDynamic = ({ zone }: { zone?: string | null }) => {
@@ -80,7 +78,7 @@ export const YearComparisonChartDynamic = ({ zone }: { zone?: string | null }) =
           setIsYearComparisonLoading(false);
           return;
         }
-        const response = await fetch(
+        const response = await queuedFetch(
           `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.YEAR_WISE_FILTER}`,
           {
             method: "POST",

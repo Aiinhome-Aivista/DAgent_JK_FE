@@ -30,6 +30,10 @@ export const API_ENDPOINTS = {
   },
   KGRAPH: {
     GET_ALL: '/api/kgraphs',
+    BACKUP: '/api/kgraph/backup',
+    BACKUPS: '/api/kgraph/backups',
+    RESTORE: '/api/kgraph/restore',
+    DELETE_BACKUP: '/api/kgraph/delete-backup',
   },
   IMPORT: {
     AGENT: '/agents',

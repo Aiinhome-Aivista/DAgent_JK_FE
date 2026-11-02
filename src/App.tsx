@@ -6,7 +6,6 @@ import { AuthProvider, useAuthContext } from './context/AuthContext';
 import { ChatWindow } from './features/chat';
 import { AgentWorkflow } from './features/workflow';
 import { LandingPage } from './features/marketing/components/LandingPage';
-import { PricingPage } from './features/marketing/components/PricingPage';
 import { PrivacyPolicyPage } from './features/marketing/components/PrivacyPolicyPage';
 import { TermsConditionsPage } from './features/marketing/components/TermsConditionsPage';
 import { HelpCenterPage } from './features/marketing/components/HelpCenterPage';
@@ -32,12 +31,12 @@ function AppContent() {
   const { userId, roleId, roleName, logout } = useAuthContext();
   const [viewMode, setViewMode] = useState<ViewMode>(
     userId ? 'app' :
-    window.location.pathname.startsWith('/admin/login') ? 'admin-login' : 
-    window.location.pathname.startsWith('/pricing') ? 'pricing' : 
-    window.location.pathname.startsWith('/privacy-policy') ? 'privacy-policy' : 
-    window.location.pathname.startsWith('/terms-and-conditions') ? 'terms-and-conditions' : 
-    window.location.pathname.startsWith('/help-center') ? 'help-center' : 
-    'landing'
+      window.location.pathname.startsWith('/admin/login') ? 'admin-login' :
+        window.location.pathname.startsWith('/pricing') ? 'pricing' :
+          window.location.pathname.startsWith('/privacy-policy') ? 'privacy-policy' :
+            window.location.pathname.startsWith('/terms-and-conditions') ? 'terms-and-conditions' :
+              window.location.pathname.startsWith('/help-center') ? 'help-center' :
+                'landing'
   );
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>(roleName === 'Admin' ? 'admin' : 'chat');
@@ -87,6 +86,7 @@ function AppContent() {
         const fetchedWorkspaces: Workspace[] = response.workspaces;
         setWorkspaces(fetchedWorkspaces);
 
+
         // Always sync selection with the active workspace from API
         const activeWS = fetchedWorkspaces.find(w => w.is_active === 1) || fetchedWorkspaces[0];
         if (activeWS) {
@@ -100,9 +100,9 @@ function AppContent() {
               const queryResponse = await chatHistoryService.getSessionChatHistory(activeWS.session_id, userId);
               if (queryResponse && queryResponse.status === 'success' && queryResponse.querySessions) {
                 setQueryHistories(prev => ({ ...prev, [activeWS.id]: queryResponse.querySessions }));
-                
+
                 const sessions = queryResponse.querySessions;
-                
+
                 const currentVisit = localStorage.getItem('current_visit_number');
                 const hasSelectedSession = localStorage.getItem('selected_query_session');
 
@@ -122,9 +122,12 @@ function AppContent() {
                   }
                   if (defaultSession && defaultSession.querySessionHistory) {
                     localStorage.setItem('default_workspace_analysis', JSON.stringify(defaultSession.querySessionHistory));
+                    const createdAt = defaultSession.querySessionHistory[0]?.created_at || (defaultSession as any).createdAt;
+                    if (createdAt) localStorage.setItem('default_workspace_analysis_time', createdAt);
                     window.dispatchEvent(new Event('default-workspace-updated'));
                   } else {
                     localStorage.removeItem('default_workspace_analysis');
+                    localStorage.removeItem('default_workspace_analysis_time');
                     window.dispatchEvent(new Event('default-workspace-updated'));
                   }
                   if (activeWS.id === selectedWorkspace?.id) {
@@ -141,7 +144,7 @@ function AppContent() {
                       }
                       setChatKey(prev => prev + 1);
                     }
-                  } 
+                  }
                   // Fresh auto-select for initial load
                   else if (!hasSelectedSession && !currentVisit) {
                     let sessionToSelect = sessions[sessions.length - 1]; // fallback to latest
@@ -221,9 +224,12 @@ function AppContent() {
           }
           if (defaultSession && defaultSession.querySessionHistory) {
             localStorage.setItem('default_workspace_analysis', JSON.stringify(defaultSession.querySessionHistory));
+            const createdAt = defaultSession.querySessionHistory[0]?.created_at || (defaultSession as any).createdAt;
+            if (createdAt) localStorage.setItem('default_workspace_analysis_time', createdAt);
             window.dispatchEvent(new Event('default-workspace-updated'));
           } else {
             localStorage.removeItem('default_workspace_analysis');
+            localStorage.removeItem('default_workspace_analysis_time');
             window.dispatchEvent(new Event('default-workspace-updated'));
           }
         } else {
@@ -247,7 +253,7 @@ function AppContent() {
       localStorage.removeItem('current_visit_number');
       localStorage.removeItem('selected_query_session');
       localStorage.removeItem('selected_query_session_name');
-      
+
       fetchWorkspaces(true);
     }
   }, [userId, viewMode]);
@@ -491,23 +497,23 @@ function AppContent() {
   };
 
   if (viewMode === 'landing') {
-    return <LandingPage onGetStarted={handleGetStarted} onLogin={handleLogin} onDashboardClick={() => setViewMode('dashboard')} onPricingClick={navigateToPricing} />;
+    return <LandingPage onGetStarted={handleGetStarted} onLogin={handleLogin} onDashboardClick={() => setViewMode('dashboard')} />;
   }
 
   if (viewMode === 'pricing') {
-    return <PricingPage onGetStarted={handleGetStarted} onLogin={handleLogin} onBackToLanding={navigateToLanding} />;
+    return <LandingPage onGetStarted={handleGetStarted} onLogin={handleLogin} onDashboardClick={() => setViewMode('dashboard')} />;
   }
 
   if (viewMode === 'privacy-policy') {
-    return <PrivacyPolicyPage onGetStarted={handleGetStarted} onLogin={handleLogin} onBackToLanding={navigateToLanding} onPricingClick={navigateToPricing} />;
+    return <PrivacyPolicyPage onGetStarted={handleGetStarted} onLogin={handleLogin} onBackToLanding={navigateToLanding} />;
   }
 
   if (viewMode === 'terms-and-conditions') {
-    return <TermsConditionsPage onGetStarted={handleGetStarted} onLogin={handleLogin} onBackToLanding={navigateToLanding} onPricingClick={navigateToPricing} />;
+    return <TermsConditionsPage onGetStarted={handleGetStarted} onLogin={handleLogin} onBackToLanding={navigateToLanding} />;
   }
 
   if (viewMode === 'help-center') {
-    return <HelpCenterPage onGetStarted={handleGetStarted} onLogin={handleLogin} onBackToLanding={navigateToLanding} onPricingClick={navigateToPricing} />;
+    return <HelpCenterPage onGetStarted={handleGetStarted} onLogin={handleLogin} onBackToLanding={navigateToLanding} />;
   }
 
 

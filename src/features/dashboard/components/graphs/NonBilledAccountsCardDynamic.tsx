@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
-import { useSessionId } from "./dashboardHooks";
+import {useSessionId, queuedFetch } from "./dashboardHooks";
 
 import { Loader2 } from "lucide-react";
 
@@ -22,7 +22,7 @@ export const NonBilledAccountsCardDynamic: React.FC<NonBilledAccountsCardProps> 
           return;
         }
         const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.NON_BILLED_ACCOUNTS}?session_id=${sessionId}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`;
-        const response = await fetch(url);
+        const response = await queuedFetch(url);
         const json = await response.json();
         
         if (json.status === "success" && json.data) {

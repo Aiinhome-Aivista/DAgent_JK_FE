@@ -28,7 +28,6 @@ import { AdminChats } from "./components/AdminChats";
 import { AdminPendingKnowledge } from "./components/AdminPendingKnowledge";
 import { CustomPrompts } from "./components/CustomPrompts";
 import { ScheduledReports } from "./components/ScheduledReports";
-import { ManagePricing } from "./components/ManagePricing";
 import { ManageLLM } from "./components/ManageLLM";
 import { ManageMasterData } from "./components/ManageMasterData";
 import { AdminKGraphReview } from "./components/AdminKGraphReview";
@@ -62,7 +61,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
-  const [isCreatingPlan, setIsCreatingPlan] = useState(false);
   const [isCreatingCompany, setIsCreatingCompany] = useState(false);
   const [isCreatingLLM, setIsCreatingLLM] = useState(false);
   const [isCreatingCompanyConfig, setIsCreatingCompanyConfig] = useState(false);
@@ -305,7 +303,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
 
         <div className="flex items-center gap-4 w-full sm:w-auto">
-          {adminSubTab !== "company" && (
+          {adminSubTab !== "company" && adminSubTab !== "kGraphReview" && (
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-secondary)]" />
               <input
@@ -389,8 +387,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
         {/* Scrollable Content */}
         <div
-          className={`flex-1 py-3 pr-3 flex flex-col min-h-0 ${adminSubTab === "customPrompts"
-            ? ""
+          className={`flex-1 py-2 ${adminSubTab === "kGraphReview" ? "pr-0" : "pr-3"} flex flex-col min-h-0 ${adminSubTab === "customPrompts" || adminSubTab === "kGraphReview"
+            ? "h-full"
             : "overflow-y-auto custom-scrollbar"
             }`}
         >
@@ -406,8 +404,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className={`w-full ${adminSubTab === "customPrompts"
-                  ? "h-full flex flex-col min-h-0"
+                className={`w-full ${adminSubTab === "customPrompts" || adminSubTab === "kGraphReview"
+                  ? "h-full flex-1 flex flex-col min-h-0"
                   : ""
                   }`}
               >

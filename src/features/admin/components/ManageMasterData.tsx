@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { Edit2, Trash2, Save, X, Loader2, Database, Terminal, ChevronLeft, ChevronRight } from "lucide-react";
+import { Edit2, Trash2, Save, X, Loader2, Database, Terminal, Settings, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { SchedulerConfigCard } from "./SchedulerConfigCard";
+import { adminService } from "../../../services/admin.service";
 import { promptService } from "../../../services/prompt.service";
 import { DataTable } from 'primereact/datatable';
 import { Column } from 'primereact/column';
 
 export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string }) => {
-  const [activeTab, setActiveTab] = useState<"dataCategories" | "promptTypes">("dataCategories");
+  const [activeTab, setActiveTab] = useState<"dataCategories" | "promptTypes" | "systemConfigs" | "scheduler">("dataCategories");
+  const [systemConfigs, setSystemConfigs] = useState<any[]>([]);
 
   // Data State
   const [dataCategories, setDataCategories] = useState<any[]>([]);
@@ -36,9 +39,30 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
       if (activeTab === "dataCategories") {
         const res = await promptService.getDataCategories();
         if (res?.success) setDataCategories(res.categories || []);
-      } else {
+      } else if (activeTab === "promptTypes") {
         const res = await promptService.getPromptTypesCrud();
         if (res?.success) setPromptTypes(res.prompt_types || []);
+      } else if (activeTab === "systemConfigs") {
+        const res = await adminService.getSystemConfigs();
+        if (res?.status === "success" && res?.data) {
+          let list: any[] = [];
+          if (Array.isArray(res.data)) {
+            list = res.data.map((item: any, idx: number) => ({
+              id: item.id || idx + 1,
+              setting_key: item.setting_key || item.key,
+              setting_value: item.setting_value ?? item.value,
+              description: item.description || ''
+            }));
+          } else if (typeof res.data === 'object' && res.data !== null) {
+            list = Object.entries(res.data).map(([k, v]: [string, any], idx: number) => ({
+              id: idx + 1,
+              setting_key: k,
+              setting_value: typeof v === 'object' && v !== null ? (v.setting_value ?? v.value ?? JSON.stringify(v)) : v,
+              description: typeof v === 'object' && v !== null ? (v.description || '') : (k === 'csv_export_threshold' ? 'Threshold for RAG Chat table view (exceeding rows show CSV export button)' : '')
+            }));
+          }
+          setSystemConfigs(list);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -54,9 +78,13 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
     if (activeTab === "dataCategories") {
         setCode(item.category_code);
         setName(item.category_name);
-    } else {
+    } else if (activeTab === "promptTypes") {
         setCode(item.type_code);
         setName(item.display_name);
+        setDescription(item.description || "");
+    } else if (activeTab === "systemConfigs") {
+        setCode(item.setting_key);
+        setName(String(item.setting_value));
         setDescription(item.description || "");
     }
   };
@@ -67,8 +95,11 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
     try {
       if (activeTab === "dataCategories") {
         await promptService.deleteDataCategory(id);
-      } else {
+      } else if (activeTab === "promptTypes") {
         await promptService.deletePromptType(id);
+      } else {
+        toast.error("System configurations cannot be deleted, but can be edited.");
+        return;
       }
       toast.success("Deleted successfully");
       fetchData();
@@ -92,12 +123,14 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
         } else {
           await promptService.createDataCategory(code, name);
         }
-      } else {
+      } else if (activeTab === "promptTypes") {
         if (isEditing && editId) {
           await promptService.updatePromptType(editId, code, name, description);
         } else {
           await promptService.createPromptType(code, name, description);
         }
+      } else if (activeTab === "systemConfigs") {
+        await adminService.updateSystemConfig(code, name, description);
       }
       toast.success("Saved successfully");
       handleCancel();
@@ -141,27 +174,51 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
         >
           <Terminal size={16} /> Prompt Types
         </button>
+        <button
+          className={`px-4 py-2 flex items-center gap-2 border-b-2 font-medium transition-colors ${
+            activeTab === "systemConfigs"
+              ? "border-[var(--accent)] text-[var(--accent)]"
+              : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          }`}
+          onClick={() => { setActiveTab("systemConfigs"); handleCancel(); setCurrentPage(1); }}
+        >
+          <Settings size={16} /> System Configurations
+        </button>
+        <button
+          className={`px-4 py-2 flex items-center gap-2 border-b-2 font-medium transition-colors ${
+            activeTab === "scheduler"
+              ? "border-[var(--accent)] text-[var(--accent)]"
+              : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          }`}
+          onClick={() => { setActiveTab("scheduler"); handleCancel(); }}
+        >
+          <Clock size={16} /> Analytics Scheduler
+        </button>
       </div>
 
       <div className="flex-1 overflow-auto flex flex-col gap-4 px-2 pb-4">
+        {activeTab === "scheduler" ? (
+          <SchedulerConfigCard />
+        ) : (
+          <>
         {/* Form Section */}
         <div className="bg-[var(--surface)] p-4 rounded-xl border border-[var(--border)] shadow-sm">
           <h3 className="text-lg font-semibold mb-4">
-            {isEditing ? "Edit" : "Add New"} {activeTab === "dataCategories" ? "Category" : "Prompt Type"}
+            {isEditing ? "Edit" : "Add New"} {activeTab === "dataCategories" ? "Category" : activeTab === "promptTypes" ? "Prompt Type" : "System Configuration"}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Code</label>
+              <label className="block text-sm font-medium mb-1">{activeTab === "systemConfigs" ? "Setting Key" : "Code"}</label>
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 className="w-full px-4 py-2 rounded-xl border border-[var(--border)] bg-transparent text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
-                placeholder={activeTab === "dataCategories" ? "e.g., global" : "e.g., analyze_v1"}
+                placeholder={activeTab === "dataCategories" ? "e.g., global" : activeTab === "promptTypes" ? "e.g., analyze_v1" : "e.g., csv_export_threshold"}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Display Name</label>
+              <label className="block text-sm font-medium mb-1">{activeTab === "systemConfigs" ? "Setting Value" : "Display Name"}</label>
               <input
                 type="text"
                 value={name}
@@ -170,7 +227,7 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
                 placeholder={activeTab === "dataCategories" ? "e.g., Global / Generic" : "e.g., Session Analysis"}
               />
             </div>
-            {activeTab === "promptTypes" && (
+            {(activeTab === "promptTypes" || activeTab === "systemConfigs") && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-1">Description</label>
                 <textarea
@@ -212,14 +269,16 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
           ) : (
             <div className="overflow-x-auto">
               {(() => {
-                const baseData = activeTab === "dataCategories" ? dataCategories : promptTypes;
+                const baseData = activeTab === "dataCategories" ? dataCategories : activeTab === "promptTypes" ? promptTypes : systemConfigs;
                 const data = baseData.filter(item => {
                   if (!searchQuery) return true;
                   const q = searchQuery.toLowerCase();
                   if (activeTab === "dataCategories") {
                     return (item.category_code?.toLowerCase().includes(q) || item.category_name?.toLowerCase().includes(q));
-                  } else {
+                  } else if (activeTab === "promptTypes") {
                     return (item.type_code?.toLowerCase().includes(q) || item.display_name?.toLowerCase().includes(q) || item.description?.toLowerCase().includes(q));
+                  } else {
+                    return (item.setting_key?.toLowerCase().includes(q) || String(item.setting_value)?.toLowerCase().includes(q) || item.description?.toLowerCase().includes(q));
                   }
                 });
                 
@@ -229,7 +288,7 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
                     paginator
                     rows={5}
                     rowsPerPageOptions={[5, 10, 25, 50]}
-                    emptyMessage={<div className="p-8 text-center text-[var(--text-secondary)]">No {activeTab === "dataCategories" ? "Categories" : "Prompt Types"} found.</div>}
+                    emptyMessage={<div className="p-8 text-center text-[var(--text-secondary)]">No {activeTab === "dataCategories" ? "Categories" : activeTab === "promptTypes" ? "Prompt Types" : "System Configurations"} found.</div>}
                     className="w-full text-left"
                     pt={{
                       thead: { className: 'bg-[var(--bg)] border-b border-[var(--border)]' },
@@ -263,10 +322,22 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
                       }
                     }}
                   >
-                    <Column field="id" header="ID" headerClassName="p-4 font-semibold text-sm" className="p-4 text-sm" />
-                    <Column field={activeTab === "dataCategories" ? "category_code" : "type_code"} header="Code" headerClassName="p-4 font-semibold text-sm" className="p-4 text-sm" />
-                    <Column field={activeTab === "dataCategories" ? "category_name" : "display_name"} header="Display Name" headerClassName="p-4 font-semibold text-sm" className="p-4 text-sm font-medium" />
-                    {activeTab === "promptTypes" && <Column field="description" header="Description" headerClassName="p-4 font-semibold text-sm" className="p-4 text-sm text-[var(--text-secondary)]" />}
+                    <Column field="id" header="ID" headerClassName="p-4 font-semibold text-sm" className="p-4 text-sm" style={{ width: '60px' }} />
+                    <Column 
+                      field={activeTab === "dataCategories" ? "category_code" : activeTab === "systemConfigs" ? "setting_key" : "type_code"} 
+                      header={activeTab === "systemConfigs" ? "Setting Key" : "Code"} 
+                      headerClassName="p-4 font-semibold text-sm" 
+                      className="p-4 text-sm font-mono" 
+                    />
+                    <Column 
+                      field={activeTab === "dataCategories" ? "category_name" : activeTab === "systemConfigs" ? "setting_value" : "display_name"} 
+                      header={activeTab === "systemConfigs" ? "Setting Value" : "Display Name"} 
+                      headerClassName="p-4 font-semibold text-sm" 
+                      className="p-4 text-sm font-medium" 
+                    />
+                    {(activeTab === "promptTypes" || activeTab === "systemConfigs") && (
+                      <Column field="description" header="Description" headerClassName="p-4 font-semibold text-sm" className="p-4 text-sm text-[var(--text-secondary)]" />
+                    )}
                     <Column
                       header="Actions"
                       headerClassName="p-4 font-semibold text-sm !text-center"
@@ -297,6 +368,8 @@ export const ManageMasterData = ({ searchQuery = "" }: { searchQuery?: string })
             </div>
           )}
         </div>
+          </>
+        )}
       </div>
     </div>
   );

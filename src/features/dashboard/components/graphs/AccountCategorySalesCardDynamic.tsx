@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
-import { useSessionId } from "./dashboardHooks";
+import {useSessionId, queuedFetch } from "./dashboardHooks";
 
 import { Loader2 } from "lucide-react";
 
@@ -18,19 +18,15 @@ export const AccountCategorySalesCardDynamic = ({ zone }: { zone?: string | null
           return;
         }
         const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_BY_ACCOUNT_CATEGORY}?session_id=${sessionId}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`;
-        const response = await fetch(url);
+        const response = await queuedFetch(url);
         const json = await response.json();
         
         if (json.status === "success" && json.data) {
           const mappedData = json.data.map((item: any) => ({
-            title: item.title,
-            value: item.value
+            title: item.title || item.TITLE || item.label || item.category || "Account Category",
+            value: item.value || item.VALUE || (item.valCr ? `₹${item.valCr} Cr` : "-")
           }));
-          if (mappedData.length > 0) {
-            setData(mappedData);
-          } else {
-            setData([]);
-          }
+          setData(mappedData);
         } else {
           setData([]);
         }
@@ -60,14 +56,14 @@ export const AccountCategorySalesCardDynamic = ({ zone }: { zone?: string | null
             {data.map((item, index) => (
               <div
                 key={index}
-                className="bg-orange-200 rounded-xl p-6 flex flex-col items-center justify-center gap-4"
+                className="bg-gradient-to-br from-amber-50 to-orange-100/70 border border-amber-200/60 rounded-xl p-5 flex flex-col items-center justify-center gap-3 shadow-xs hover:shadow-sm transition-all"
               >
-                <span className="text-slate-800 font-bold text-sm text-center">
+                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-200/60 text-amber-900 text-[11px] font-bold tracking-wider uppercase">
                   {item.title}
-                </span>
-                <span className="text-slate-800 text-lg sm:text-xl font-medium">
-                  {item.value}
-                </span>
+                </div>
+                <div className="text-slate-800 text-xl font-bold tracking-tight text-center">
+                  {String(item.value).includes('₹') ? item.value : `₹${item.value}${String(item.value).includes('Cr') ? '' : ' Cr'}`}
+                </div>
               </div>
             ))}
           </div>

@@ -167,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 { id: 'pendingKnowledge', icon: Archive, label: 'KG History' },
                 { id: 'scheduledReports', icon: FileText, label: 'Scheduled Reports' },
                 { id: 'masterData', icon: HardDrive, label: 'Master Data' },
-                // { id: 'kGraphReview', icon: Network, label: 'K-Graph Review' }
+                { id: 'kGraphReview', icon: Network, label: 'K-Graph Review' }
               ].map((tab) => (
                 <button
                   key={tab.id}

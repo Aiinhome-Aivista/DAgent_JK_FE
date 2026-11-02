@@ -12,7 +12,7 @@ import {
   Cell,
 } from "recharts";
 import { COLORS } from "./mockData";
-import { FilterSelect, useAvailableYears, useSessionId } from "./dashboardHooks";
+import {FilterSelect, useAvailableYears, useSessionId, queuedFetch } from "./dashboardHooks";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 
 export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
@@ -51,7 +51,7 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
           setIsTyreLoading(false);
           return;
         }
-        const response = await fetch(
+        const response = await queuedFetch(
           `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.TYRE_SALES_DATA}`,
           {
             method: "POST",

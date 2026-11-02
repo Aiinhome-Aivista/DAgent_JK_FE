@@ -10,6 +10,30 @@ export interface AdminUser {
 }
 
 export const adminService = {
+    getSystemConfigs: async (): Promise<any> => {
+        return apiService.get('/api/system-config');
+    },
+
+    getSchedulerConfig: async (): Promise<any> => {
+        return apiService.get('/api/scheduler/config');
+    },
+
+    updateSchedulerConfig: async (data: { schedule_time: string; frequency?: string; is_active?: boolean }): Promise<any> => {
+        return apiService.post('/api/scheduler/config', data);
+    },
+
+    runSchedulerNow: async (): Promise<any> => {
+        return apiService.post('/api/scheduler/run-now');
+    },
+
+    updateSystemConfig: async (key: string, value: any, description: string = ''): Promise<any> => {
+        return apiService.post('/api/system-config', {
+            key,
+            value,
+            description
+        });
+    },
+
     getUsers: async (): Promise<any> => {
         return apiService.get(API_ENDPOINTS.USERS.GET_USERS);
     },

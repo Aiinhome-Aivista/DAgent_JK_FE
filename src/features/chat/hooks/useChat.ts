@@ -50,7 +50,7 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
     // We will update messages below based on branching
     setIsLoading(true);
     setFollowUpQuestions([]);
-    setProcessingSteps(['Analyzing query...']);
+    setProcessingSteps(['Thinking...']);
 
     try {
       const chatSessionId = sessionId || localStorage.getItem('DAgent_session_id');
@@ -71,12 +71,24 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
         setMessages((prev) => [...prev, userMessage]);
       }
 
-      const response: any = await connectorService.sendSessionChat({
-        session_id: chatSessionId,
-        question: content,
-        user_id: userId,
-        ...(currentVisitNumber ? { visit_number: parseInt(currentVisitNumber, 10) } : { is_new_query: true })
-      });
+      const handleStatus = (stepMessage: string) => {
+        setProcessingSteps((prev) => {
+          if (prev.length > 0 && prev[prev.length - 1] === stepMessage) {
+            return prev;
+          }
+          return [...prev, stepMessage];
+        });
+      };
+
+      const response: any = await connectorService.sendSessionChat(
+        {
+          session_id: chatSessionId,
+          question: content,
+          user_id: userId,
+          ...(currentVisitNumber ? { visit_number: parseInt(currentVisitNumber, 10) } : { is_new_query: true })
+        },
+        handleStatus
+      );
 
       if (response?.visit_number) {
         localStorage.setItem('current_visit_number', response.visit_number.toString());

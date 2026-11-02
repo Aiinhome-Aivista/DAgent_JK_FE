@@ -1,11 +1,16 @@
 export interface Visualization {
-  type: 'table' | 'bar_chart' | 'pie_chart' | 'line_chart';
+  type: 'table' | 'bar_chart' | 'pie_chart' | 'line_chart' | 'csv_export';
   title?: string;
   columns?: { key: string; label: string }[];
-  data: any[];
+  data?: any[];
   xKey?: string;
   yKey?: string;
   seriesKey?: string;
+  filename?: string;
+  total_records?: number;
+  threshold?: number;
+  sql_query?: string;
+  session_id?: string;
 }
 
 export interface Message {

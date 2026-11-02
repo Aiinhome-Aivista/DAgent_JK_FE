@@ -6,16 +6,16 @@ import {
   Cell,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
+  Legend,
 } from "recharts";
 import { COLORS } from "./mockData";
-import { FilterSelect, useDashboardFilters, useSessionId } from "./dashboardHooks";
+import {FilterSelect, useDashboardFilters, useSessionId, queuedFetch } from "./dashboardHooks";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 
 export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
   const filters = useDashboardFilters();
   const sessionId = useSessionId();
 
-  const [zoneProductType, setZoneProductType] = useState("All");
   const [zoneConstructionType, setZoneConstructionType] = useState("All");
   const [zoneTyreType, setZoneTyreType] = useState("All");
   const [zoneYear, setZoneYear] = useState("All");
@@ -36,14 +36,13 @@ export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
           setIsZoneLoading(false);
           return;
         }
-        const response = await fetch(
+        const response = await queuedFetch(
           `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_BY_ZONE}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               session_id: sessionId,
-              product_type: zoneProductType,
               construction_type: zoneConstructionType,
               tyre_type: zoneTyreType,
               years: zoneYear === "All" ? "All" : [Number(zoneYear)],
@@ -75,11 +74,18 @@ export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
           setZoneAxisLabels({ x: xLabel, y: yLabel });
           if (viz.title) setZoneChartTitle(viz.title);
 
-          const mappedData = data.visualizations[0].data.map((item: any) => ({
-            name: item.name || item.zone,
-            value: Number(item.percentage || item.value),
-            sales_value: item.sales_value,
-          }));
+          const mappedData = data.visualizations[0].data.map((item: any) => {
+            const rawSales = Number(item.sales_value ?? item.value ?? 0);
+            const pct = item.percentage !== undefined && item.percentage !== null && !isNaN(Number(item.percentage))
+              ? Number(item.percentage)
+              : undefined;
+            return {
+              name: item.name || item.zone || item.zone_name,
+              value: rawSales,
+              percentage: pct,
+              sales_value: rawSales,
+            };
+          });
           setZoneData(mappedData);
         }
       } catch (err) {
@@ -91,7 +97,6 @@ export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
     fetchZoneData();
   }, [
     sessionId,
-    zoneProductType,
     zoneConstructionType,
     zoneTyreType,
     zoneYear,
@@ -124,12 +129,7 @@ export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
             onChange={(e) => setZoneMonth(e.target.value)}
             options={filters.months}
           />
-          <FilterSelect
-            label="Product Type"
-            value={zoneProductType}
-            onChange={(e) => setZoneProductType(e.target.value)}
-            options={filters.categories}
-          />
+
           <FilterSelect
             label="Construction Type"
             value={zoneConstructionType}
@@ -157,15 +157,19 @@ export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
               <Pie
                 data={zoneData}
                 cx="50%"
-                cy="50%"
-                outerRadius={120}
+                cy="48%"
+                outerRadius={110}
                 fill="#8884d8"
                 dataKey="value"
-                label={({ name, percent }) =>
-                  `${name}: ${(percent * 100).toFixed(1)}%`
-                }
+                minAngle={4}
+                label={({ name, percent }) => {
+                  const pctVal = percent * 100;
+                  const displayPct = pctVal < 0.1 && pctVal > 0 ? "<0.1%" : `${pctVal.toFixed(1)}%`;
+                  return `${name}: ${displayPct}`;
+                }}
                 labelLine={true}
-                stroke="none"
+                stroke="#ffffff"
+                strokeWidth={1}
               >
                 {zoneData.map((entry, index) => (
                   <Cell
@@ -174,6 +178,12 @@ export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
                   />
                 ))}
               </Pie>
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                iconType="circle"
+                wrapperStyle={{ paddingTop: "8px", fontSize: "12px" }}
+              />
               <RechartsTooltip
                 wrapperStyle={{ zIndex: 1000 }}
                 contentStyle={{
@@ -183,16 +193,24 @@ export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
                   boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                 }}
                 formatter={(value: any, name: any, props: any) => {
-                  const salesValue = props.payload.sales_value;
-                  if (salesValue) {
+                  const salesValue = props?.payload?.sales_value ?? value;
+                  const pct = props?.payload?.percentage !== undefined
+                    ? Number(props.payload.percentage).toFixed(1)
+                    : (props?.payload?.percent ? (props.payload.percent * 100).toFixed(1) : "0.0");
+                  const displayPct = Number(pct) < 0.1 && Number(pct) > 0 ? "<0.1%" : `${pct}%`;
+                  if (salesValue !== undefined && salesValue !== null) {
                     let val = Number(salesValue);
-                    let formatted = `₹${(val / 10000000).toFixed(2)} Cr`;
+                    let formatted = val >= 10000000
+                      ? `₹${(val / 10000000).toFixed(2)} Cr`
+                      : val >= 100000
+                        ? `₹${(val / 100000).toFixed(2)} L`
+                        : `₹${val.toLocaleString()}`;
                     return [
-                      `${value}% | ${zoneAxisLabels.y.replace(" (₹)", "")}: ${formatted}`,
+                      `${displayPct} | ${zoneAxisLabels.y.replace(" (₹)", "")}: ${formatted}`,
                       name,
                     ];
                   }
-                  return [`${value}%`, name];
+                  return [displayPct, name];
                 }}
               />
             </PieChart>

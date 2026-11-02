@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 export interface IApiService {
   get<T>(endpoint: string): Promise<T>;
   post<T>(endpoint: string, data: any): Promise<T>;
+  postStream<T>(endpoint: string, data: any, onStatus?: (step: string) => void): Promise<T>;
   put<T>(endpoint: string, data: any): Promise<T>;
   delete<T>(endpoint: string, data?: any): Promise<T>;
   download(endpoint: string, data: any, filename: string): Promise<void>;
@@ -77,6 +78,91 @@ class ApiService implements IApiService {
         body: isFormData ? data : JSON.stringify(data),
       });
       return this.handleResponse<T>(response);
+    } catch (error) {
+      this.handleError(error);
+      throw error;
+    }
+  }
+
+  async postStream<T>(endpoint: string, data: any, onStatus?: (step: string) => void): Promise<T> {
+    try {
+      const headers = this.getHeaders();
+      headers['Accept'] = 'text/event-stream';
+
+      const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ ...data, stream: true }),
+      });
+
+      if (!response.ok) {
+        return this.handleResponse<T>(response);
+      }
+
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('text/event-stream')) {
+        return response.json();
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('Response body is not readable');
+      }
+
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+      let finalResult: any = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() || '';
+
+        for (const part of parts) {
+          const trimmed = part.trim();
+          if (!trimmed || !trimmed.startsWith('data:')) continue;
+
+          try {
+            const jsonStr = trimmed.replace(/^data:\s*/, '');
+            const parsed = JSON.parse(jsonStr);
+
+            if (parsed.type === 'status') {
+              if (parsed.step && onStatus) {
+                onStatus(parsed.step);
+              }
+            } else if (parsed.type === 'done') {
+              finalResult = parsed.result;
+            } else if (parsed.type === 'error') {
+              throw new Error(parsed.message || 'Stream processing failed');
+            }
+          } catch (e: any) {
+            if (e.message && e.message.includes('Stream processing failed')) {
+              throw e;
+            }
+          }
+        }
+      }
+
+      if (buffer.trim().startsWith('data:')) {
+        try {
+          const jsonStr = buffer.trim().replace(/^data:\s*/, '');
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.type === 'done') {
+            finalResult = parsed.result;
+          } else if (parsed.type === 'status' && parsed.step && onStatus) {
+            onStatus(parsed.step);
+          }
+        } catch (_) {}
+      }
+
+      if (finalResult !== null) {
+        return finalResult as T;
+      }
+
+      throw new Error('No final response received from stream');
     } catch (error) {
       this.handleError(error);
       throw error;

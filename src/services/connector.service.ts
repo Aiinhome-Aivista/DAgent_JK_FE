@@ -15,7 +15,7 @@ export interface IConnectorService {
   describeSavedContent(userId: string): Promise<any>;
   getSessionSources(sessionId: string): Promise<any>;
   processSessionAnalysis(payload: { session_id: string; topics?: string[]; databases?: string[] }): Promise<any>;
-  sendSessionChat(payload: { session_id: string; question: string; user_id?: number | string | null; visit_number?: number; is_new_query?: boolean }): Promise<any>;
+  sendSessionChat(payload: { session_id: string; question: string; user_id?: number | string | null; visit_number?: number; is_new_query?: boolean; [key: string]: any }, onStatus?: (step: string) => void): Promise<any>;
   uploadCsv(payload: { user_id: string; session_id: string; files: File[] }): Promise<any>;
   importCsvData(payload: { user_id: number; connection_id?: number; connection_ids?: number[]; session_id: string }): Promise<any>;
   importSqlData(payload: { user_id: number; connection_id: number; session_id: string }): Promise<any>;
@@ -115,7 +115,13 @@ class ConnectorService implements IConnectorService {
     return this.api.post(API_ENDPOINTS.IMPORT.SESSION_ANALYSIS, payload);
   }
 
-  async sendSessionChat(payload: { session_id: string; question: string; user_id?: number | string | null; visit_number?: number; is_new_query?: boolean }): Promise<any> {
+  async sendSessionChat(
+    payload: { session_id: string; question: string; user_id?: number | string | null; visit_number?: number; is_new_query?: boolean; [key: string]: any },
+    onStatus?: (step: string) => void
+  ): Promise<any> {
+    if (onStatus) {
+      return this.api.postStream(API_ENDPOINTS.CHAT.CHAT, payload, onStatus);
+    }
     return this.api.post(API_ENDPOINTS.CHAT.CHAT, payload);
   }
 
