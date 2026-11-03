@@ -35,6 +35,18 @@ export const DashboardKPIs = () => {
   const formatSyncTime = (timeStr: string | null) => {
     if (!timeStr) return "";
     try {
+      const clean = timeStr.replace(" GMT", "").trim();
+      const parts = clean.split(" ");
+      const timePart = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+      if (timePart.includes(":")) {
+        const [h, m] = timePart.split(":");
+        const hour = parseInt(h, 10);
+        if (!isNaN(hour)) {
+          const ampm = hour >= 12 ? "PM" : "AM";
+          const displayHour = hour % 12 || 12;
+          return `${displayHour.toString().padStart(2, "0")}:${m} ${ampm}`;
+        }
+      }
       const d = new Date(timeStr);
       if (isNaN(d.getTime())) return timeStr.split(" ")[1] || timeStr;
       return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });

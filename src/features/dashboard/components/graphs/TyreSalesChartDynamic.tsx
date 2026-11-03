@@ -84,7 +84,7 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
               plotValue = val / 10000000;
             }
             return {
-              name: item.category,
+              name: item.vehicle_type || item.category || item.tyre_type || item.name || "Unknown",
               value: plotValue,
               sales_value: item.sales_value,
             };

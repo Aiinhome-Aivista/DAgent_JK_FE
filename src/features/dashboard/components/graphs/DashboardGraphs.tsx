@@ -628,7 +628,8 @@ const SummaryRevisedDownloadCard = () => {
     }, 1000);
 
     return () => {
-      clearTimeout(timer); isMounted = false; };
+      clearTimeout(timer); isMounted = false;
+    };
   }, []);
 
   const handleDownload = async (e: React.MouseEvent) => {
@@ -785,16 +786,16 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
       <YearComparisonChartDynamic zone={selectedZone} />
 
       {/* 4. Sales by Zone & Top 10 Tyre Types by Sales */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ZonePieChartDynamic zone={selectedZone} />
-        <TyreSalesChartDynamic zone={selectedZone} />
-      </div>
+
+      <ZonePieChartDynamic zone={selectedZone} />
+      <TyreSalesChartDynamic zone={selectedZone} />
+
 
       {/* 5. Category Sales & Actual Sales by Account Category */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CategorySalesCardDynamic zone={selectedZone} />
-        <AccountCategorySalesCardDynamic zone={selectedZone} />
-      </div>
+
+      <CategorySalesCardDynamic zone={selectedZone} />
+      <AccountCategorySalesCardDynamic zone={selectedZone} />
+
     </div>
   );
 };
