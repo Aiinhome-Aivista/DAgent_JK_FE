@@ -771,41 +771,30 @@ const SummaryRevisedDownloadCard = () => {
 
 
 export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean }) => {
+  const [selectedZone, setSelectedZone] = useState<string | null>(null);
+
   return (
-    <div className="flex flex-col gap-6 overflow-x-hidden">
-      <div className="flex flex-col gap-3">
-        {/* Executive Summary Card */}
-        <SummaryCard isWorkspacesLoading={isWorkspacesLoading} />
+    <div className="flex flex-col gap-6 overflow-x-hidden p-2">
+      {/* 1. Summary Revised Download Table Card */}
+      <SummaryRevisedDownloadCard />
 
-        {/* Summary Revised Download Card */}
-        <SummaryRevisedDownloadCard />
+      {/* 2. Chart 1: Sales Revenue (Plan vs Sale & Achievement) */}
+      <PlanVsSaleChartDynamic onZoneClick={(zone) => setSelectedZone(zone)} />
 
-        {/* Plan vs Sale & Achievement */}
-        <PlanVsSaleChartDynamic />
+      {/* 3. Chart 2: Year-wise Sales Comparison */}
+      <YearComparisonChartDynamic zone={selectedZone} />
 
-        {/* Year-wise Comparison Filterable Chart */}
-        <YearComparisonChartDynamic />
+      {/* 4. Sales by Zone & Top 10 Tyre Types by Sales */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <ZonePieChartDynamic zone={selectedZone} />
+        <TyreSalesChartDynamic zone={selectedZone} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {/* Sales by Zone */}
-        <ZonePieChartDynamic />
-
-        {/* Top 10 Tyre Types by Sales */}
-        <TyreSalesChartDynamic />
-
-        {/* Category Sales */}
-        <CategorySalesCardDynamic />
-
-        {/* Actual Sales by Account Category */}
-        <AccountCategorySalesCardDynamic />
-
-        {/* Non Billed Accounts %, Overdue%, and Exposure % hidden per requirement */}
-        {/* <NonBilledAccountsCardDynamic /> */}
-        {/* <OverduePieChartDynamic /> */}
-        {/* <ExposureCardDynamic /> */}
+      {/* 5. Category Sales & Actual Sales by Account Category */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <CategorySalesCardDynamic zone={selectedZone} />
+        <AccountCategorySalesCardDynamic zone={selectedZone} />
       </div>
     </div>
   );
 };
-

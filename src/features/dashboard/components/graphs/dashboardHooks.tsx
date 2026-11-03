@@ -106,9 +106,15 @@ export const FilterSelect = ({
 
     >
 
-      <option value="All">{defaultLabel}</option>
+      <option value="ALL">{defaultLabel}</option>
 
-      {options.map((opt: any, idx: number) => {
+      {options
+        .filter((opt: any) => {
+          const isObj = typeof opt === "object" && opt !== null;
+          const optVal = isObj ? (opt.value ?? opt.val ?? opt.val_code ?? "") : opt;
+          return String(optVal).trim().toUpperCase() !== "ALL";
+        })
+        .map((opt: any, idx: number) => {
 
         const isObj = typeof opt === "object" && opt !== null;
 
