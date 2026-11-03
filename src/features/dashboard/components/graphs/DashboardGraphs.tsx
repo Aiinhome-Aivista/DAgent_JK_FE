@@ -776,6 +776,9 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
 
   return (
     <div className="flex flex-col gap-6 overflow-x-hidden p-2">
+      {/* Executive Summary Card */}
+      <SummaryCard isWorkspacesLoading={isWorkspacesLoading} />
+
       {/* 1. Summary Revised Download Table Card */}
       <SummaryRevisedDownloadCard />
 
