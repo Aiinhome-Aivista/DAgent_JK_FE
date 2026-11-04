@@ -31,6 +31,26 @@ interface MetaInfo {
   day_label: string;
 }
 
+interface MonthItem {
+  month_no: number;
+  month_name: string;
+}
+
+const DEFAULT_MONTHS: MonthItem[] = [
+  { month_no: 1, month_name: "JAN" },
+  { month_no: 2, month_name: "FEB" },
+  { month_no: 3, month_name: "MAR" },
+  { month_no: 4, month_name: "APR" },
+  { month_no: 5, month_name: "MAY" },
+  { month_no: 6, month_name: "JUN" },
+  { month_no: 7, month_name: "JUL" },
+  { month_no: 8, month_name: "AUG" },
+  { month_no: 9, month_name: "SEP" },
+  { month_no: 10, month_name: "OCT" },
+  { month_no: 11, month_name: "NOV" },
+  { month_no: 12, month_name: "DEC" },
+];
+
 const fmtNum = (v: number | undefined | null) => {
   if (v === undefined || v === null) return "0.00";
   return Number(v).toLocaleString("en-IN", {
@@ -39,22 +59,14 @@ const fmtNum = (v: number | undefined | null) => {
   });
 };
 
-const fmtMonthLabel = (ym: string) => {
-  if (!ym || ym.length !== 6) return ym;
-  const yr = ym.substring(0, 4);
-  const moNum = parseInt(ym.substring(4, 6), 10);
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  return `${months[moNum - 1] || "Month"} ${yr}`;
-};
-
 export const DomesticSalesValueAchievementCard = () => {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const activeTab = TABS[activeTabIndex].id;
 
   // Dedicated Sheet 1 state
   const [sheet1Data, setSheet1Data] = useState<DomesticSalesRow[]>([]);
-  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
-  const [selectedMonth, setSelectedMonth] = useState<string>("");
+  const [months, setMonths] = useState<MonthItem[]>(DEFAULT_MONTHS);
+  const [selectedMonthNo, setSelectedMonthNo] = useState<number>(11);
   const [meta, setMeta] = useState<MetaInfo>({
     month_abbr: "Nov",
     prev_year_label: "Nov-25 Actual",
@@ -72,7 +84,7 @@ export const DomesticSalesValueAchievementCard = () => {
   const sessionId = useSessionId();
 
   // Fetch dedicated Sheet 1 data
-  const fetchSheet1Data = async (monthOverride?: string) => {
+  const fetchSheet1Data = async (monthOverride?: number) => {
     setIsSheet1Loading(true);
     try {
       if (!sessionId || sessionId === "null") {
@@ -80,10 +92,10 @@ export const DomesticSalesValueAchievementCard = () => {
         return;
       }
 
-      const activeYm = monthOverride !== undefined ? monthOverride : selectedMonth;
+      const activeMo = monthOverride !== undefined ? monthOverride : selectedMonthNo;
       let url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.DOMESTIC_SALES_VALUE_ACHIEVEMENT}?session_id=${sessionId}`;
-      if (activeYm) {
-        url += `&year_month=${encodeURIComponent(activeYm)}`;
+      if (activeMo) {
+        url += `&month=${encodeURIComponent(activeMo)}`;
       }
 
       const response = await queuedFetch(url);
@@ -91,11 +103,11 @@ export const DomesticSalesValueAchievementCard = () => {
 
       if (json.status === "success" && json.data) {
         setSheet1Data(json.data);
-        if (json.available_months && Array.isArray(json.available_months)) {
-          setAvailableMonths(json.available_months);
+        if (json.months && Array.isArray(json.months)) {
+          setMonths(json.months);
         }
-        if (json.active_month) {
-          setSelectedMonth(json.active_month);
+        if (json.selected_month) {
+          setSelectedMonthNo(json.selected_month);
         }
         if (json.meta) {
           setMeta(json.meta);
@@ -146,9 +158,11 @@ export const DomesticSalesValueAchievementCard = () => {
   }, [activeTabIndex]);
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const ym = e.target.value;
-    setSelectedMonth(ym);
-    fetchSheet1Data(ym);
+    const mo = parseInt(e.target.value, 10);
+    if (!isNaN(mo)) {
+      setSelectedMonthNo(mo);
+      fetchSheet1Data(mo);
+    }
   };
 
   const handleDownload = async (e: React.MouseEvent) => {
@@ -159,8 +173,8 @@ export const DomesticSalesValueAchievementCard = () => {
       const now = new Date();
       await apiService.download(
         API_ENDPOINTS.REPORTS.EXPORT_DOMESTIC_SALES,
-        { session_id: sessionId, year_month: selectedMonth },
-        `Summary_Revised_${now.getFullYear()}_${now.getMonth() + 1}_${now.getDate()}.xlsx`
+        { session_id: sessionId, month: selectedMonthNo },
+        `Summary_Revised_${now.getFullYear()}_${selectedMonthNo}_${now.getDate()}.xlsx`
       );
       toast.success("Downloaded!", { id: toastId });
     } catch (err: any) {
@@ -224,20 +238,16 @@ export const DomesticSalesValueAchievementCard = () => {
                 Month:
               </label>
               <select
-                value={selectedMonth}
+                value={selectedMonthNo}
                 onChange={handleMonthChange}
                 disabled={isSheet1Loading}
                 className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
               >
-                {availableMonths.length > 0 ? (
-                  availableMonths.map((ym) => (
-                    <option key={ym} value={ym}>
-                      {fmtMonthLabel(ym)}
-                    </option>
-                  ))
-                ) : (
-                  <option value={selectedMonth}>{fmtMonthLabel(selectedMonth) || "Current Month"}</option>
-                )}
+                {months.map((m) => (
+                  <option key={m.month_no} value={m.month_no}>
+                    {m.month_name}
+                  </option>
+                ))}
               </select>
             </div>
           )}
