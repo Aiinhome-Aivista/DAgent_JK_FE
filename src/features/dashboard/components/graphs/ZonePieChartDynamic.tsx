@@ -9,17 +9,17 @@ import {
   Legend,
 } from "recharts";
 import { COLORS } from "./mockData";
-import {FilterSelect, useDashboardFilters, useSessionId, queuedFetch } from "./dashboardHooks";
+import { FilterSelect, useDashboardFilters, useSessionId, queuedFetch } from "./dashboardHooks";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 
 export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
   const filters = useDashboardFilters();
   const sessionId = useSessionId();
 
-  const [zoneConstructionType, setZoneConstructionType] = useState("All");
-  const [zoneTyreType, setZoneTyreType] = useState("All");
-  const [zoneYear, setZoneYear] = useState("All");
-  const [zoneMonth, setZoneMonth] = useState("All");
+  const [zoneConstructionType, setZoneConstructionType] = useState("ALL");
+  const [zoneTyreType, setZoneTyreType] = useState("ALL");
+  const [zoneYear, setZoneYear] = useState("ALL");
+  const [zoneMonth, setZoneMonth] = useState("ALL");
   const [zoneData, setZoneData] = useState<any[]>([]);
   const [isZoneLoading, setIsZoneLoading] = useState(true);
   const [zoneAxisLabels, setZoneAxisLabels] = useState({
@@ -43,10 +43,10 @@ export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               session_id: sessionId,
-              construction_type: zoneConstructionType,
-              tyre_type: zoneTyreType,
-              years: zoneYear === "All" ? "All" : [Number(zoneYear)],
-              months: zoneMonth,
+              construction_type: !zoneConstructionType || zoneConstructionType.toUpperCase() === "ALL" ? "ALL" : zoneConstructionType,
+              tyre_type: !zoneTyreType || zoneTyreType.toUpperCase() === "ALL" ? "ALL" : zoneTyreType,
+              years: !zoneYear || zoneYear.toUpperCase() === "ALL" ? "ALL" : (isNaN(Number(zoneYear)) ? zoneYear : [Number(zoneYear)]),
+              months: !zoneMonth || zoneMonth.toUpperCase() === "ALL" ? "ALL" : zoneMonth,
               selected_zones: zone && zone.toLowerCase() !== "all" ? [zone] : []
             }),
           },

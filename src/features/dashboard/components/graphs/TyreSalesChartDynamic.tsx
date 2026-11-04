@@ -12,7 +12,7 @@ import {
   Cell,
 } from "recharts";
 import { COLORS } from "./mockData";
-import {FilterSelect, useAvailableYears, useSessionId, queuedFetch } from "./dashboardHooks";
+import { FilterSelect, useAvailableYears, useSessionId, queuedFetch } from "./dashboardHooks";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 
 export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
@@ -36,11 +36,11 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
     "Top 10 Tyre Types by Sales",
   );
 
-  const [tyreYear, setTyreYear] = useState("All");
-  const [tyreCustomerCategory, setTyreCustomerCategory] = useState("All");
-  const [tyreZone, setTyreZone] = useState("All");
-  const [tyreRegion, setTyreRegion] = useState("All");
-  const [tyreConstructionType, setTyreConstructionType] = useState("All");
+  const [tyreYear, setTyreYear] = useState("ALL");
+  const [tyreCustomerCategory, setTyreCustomerCategory] = useState("ALL");
+  const [tyreZone, setTyreZone] = useState("ALL");
+  const [tyreRegion, setTyreRegion] = useState("ALL");
+  const [tyreConstructionType, setTyreConstructionType] = useState("ALL");
 
   useEffect(() => {
     const fetchTyreData = async () => {
@@ -60,11 +60,11 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
               session_id: sessionId,
               question: "Top 10 Tyre Types by Sales ",
               user_id: userId,
-              year: tyreYear === "All" ? ["All"] : [Number(tyreYear)],
+              year: !tyreYear || tyreYear.toUpperCase() === "ALL" ? ["ALL"] : (isNaN(Number(tyreYear)) ? [tyreYear] : [Number(tyreYear)]),
               customer_category: [tyreCustomerCategory],
-              zone: zone && zone.toLowerCase() !== "all" 
-                ? [zone] 
-                : tyreZone.toLowerCase() === "all" ? ["All"] : [tyreZone],
+              zone: zone && zone.toLowerCase() !== "all"
+                ? [zone]
+                : (!tyreZone || tyreZone.toUpperCase() === "ALL" ? ["ALL"] : [tyreZone]),
               region: [tyreRegion],
               construction_type: [tyreConstructionType],
             }),
