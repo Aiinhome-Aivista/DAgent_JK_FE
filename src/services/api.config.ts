@@ -67,7 +67,8 @@ export const API_ENDPOINTS = {
     NON_BILLED_ACCOUNTS: '/non-billed-accounts-pct',
     OVERDUE_PCT: '/overdue-pct',
     EXPOSURE_PCT: '/exposure-pct',
-    CATEGORY_SALES: '/category-sales'
+    CATEGORY_SALES: '/category-sales',
+    DOMESTIC_SALES_VALUE_ACHIEVEMENT: '/domestic-sales-value-achievement'
 
   },
 

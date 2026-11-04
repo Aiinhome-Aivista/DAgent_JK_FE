@@ -31,6 +31,7 @@ import { AccountCategorySalesCardDynamic } from "./AccountCategorySalesCardDynam
 import { NonBilledAccountsCardDynamic } from "./NonBilledAccountsCardDynamic";
 import { OverduePieChartDynamic } from "./OverduePieChartDynamic";
 import { ExposureCardDynamic } from "./ExposureCardDynamic";
+import { DomesticSalesValueAchievementCard } from "./DomesticSalesValueAchievementCard";
 
 const formatInlineMarkdown = (text: string) => {
   if (!text) return "";
@@ -780,7 +781,7 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
       <SummaryCard isWorkspacesLoading={isWorkspacesLoading} />
 
       {/* 1. Summary Revised Download Table Card */}
-      <SummaryRevisedDownloadCard />
+      <DomesticSalesValueAchievementCard />
 
       {/* 2. Chart 1: Sales Revenue (Plan vs Sale & Achievement) */}
       <PlanVsSaleChartDynamic onZoneClick={(zone) => setSelectedZone(zone)} />

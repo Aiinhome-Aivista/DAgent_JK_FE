@@ -3,6 +3,47 @@ import toast from "react-hot-toast";
 import { Clock, Save, Loader2, RefreshCw, AlertCircle, X } from "lucide-react";
 import { adminService } from "../../../services/admin.service";
 
+const format12Hour = (dateTimeStr?: string | null): string => {
+  if (!dateTimeStr) return "";
+  try {
+    const clean = String(dateTimeStr).trim();
+    // Handle "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM"
+    const parts = clean.split(" ");
+    if (parts.length === 2 && parts[1].includes(":")) {
+      const datePart = parts[0];
+      const timeParts = parts[1].split(":");
+      const hour = parseInt(timeParts[0], 10);
+      if (!isNaN(hour)) {
+        const ampm = hour >= 12 ? "PM" : "AM";
+        const displayHour = hour % 12 || 12;
+        const hh = displayHour.toString().padStart(2, "0");
+        const mm = timeParts[1] || "00";
+        const ss = timeParts[2] ? `:${timeParts[2]}` : "";
+        return `${datePart} ${hh}:${mm}${ss} ${ampm}`;
+      }
+    }
+    // Handle simple "HH:MM"
+    if (clean.includes(":") && !clean.includes(" ")) {
+      const [h, m] = clean.split(":");
+      const hour = parseInt(h, 10);
+      if (!isNaN(hour)) {
+        const ampm = hour >= 12 ? "PM" : "AM";
+        const displayHour = hour % 12 || 12;
+        return `${displayHour.toString().padStart(2, "0")}:${m} ${ampm}`;
+      }
+    }
+    // Handle "Today at HH:MM"
+    if (clean.toLowerCase().startsWith("today at ")) {
+      const timePart = clean.substring(9).trim();
+      return `Today at ${format12Hour(timePart)}`;
+    }
+    return dateTimeStr;
+  } catch {
+    return dateTimeStr;
+  }
+};
+
+
 export const SchedulerConfigCard = () => {
   const [scheduleTime, setScheduleTime] = useState("19:00");
   const [frequency, setFrequency] = useState("daily");
@@ -23,47 +64,7 @@ export const SchedulerConfigCard = () => {
       const interval = setInterval(() => {
         fetchConfig();
       }, 5000);
-      const format12Hour = (dateTimeStr?: string | null) => {
-    if (!dateTimeStr) return "";
-    try {
-      const clean = String(dateTimeStr).trim();
-      // Handle "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM"
-      const parts = clean.split(" ");
-      if (parts.length === 2 && parts[1].includes(":")) {
-        const datePart = parts[0];
-        const timeParts = parts[1].split(":");
-        const hour = parseInt(timeParts[0], 10);
-        if (!isNaN(hour)) {
-          const ampm = hour >= 12 ? "PM" : "AM";
-          const displayHour = hour % 12 || 12;
-          const hh = displayHour.toString().padStart(2, "0");
-          const mm = timeParts[1] || "00";
-          const ss = timeParts[2] ? `:${timeParts[2]}` : "";
-          return `${datePart} ${hh}:${mm}${ss} ${ampm}`;
-        }
-      }
-      // Handle simple "HH:MM"
-      if (clean.includes(":") && !clean.includes(" ")) {
-        const [h, m] = clean.split(":");
-        const hour = parseInt(h, 10);
-        if (!isNaN(hour)) {
-          const ampm = hour >= 12 ? "PM" : "AM";
-          const displayHour = hour % 12 || 12;
-          return `${displayHour.toString().padStart(2, "0")}:${m} ${ampm}`;
-        }
-      }
-      // Handle "Today at HH:MM"
-      if (clean.toLowerCase().startsWith("today at ")) {
-        const timePart = clean.substring(9).trim();
-        return `Today at ${format12Hour(timePart)}`;
-      }
-      return dateTimeStr;
-    } catch {
-      return dateTimeStr;
-    }
-  };
-
-  return () => clearInterval(interval);
+      return () => clearInterval(interval);
     }
   }, [statusInfo?.last_run_status]);
 
