@@ -24,6 +24,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
 import { Connector } from "../../connectors/types";
+import { useAuthContext } from "@/src/context/AuthContext";
 
 interface ChatWindowProps {
   initialMode?: ChatMode;
@@ -52,6 +53,14 @@ export const ChatWindow = ({
   chatKey,
   isInitializing = false,
 }: ChatWindowProps) => {
+  const { roleName, roleId, visibility } = useAuthContext();
+  const isPrivateUser = Boolean(
+    roleName === 'Admin' ||
+    roleId === 4 ||
+    visibility === 2 ||
+    localStorage.getItem('DAgent_user_visibility') === '2'
+  );
+
   const {
     messages,
     sendMessage,
@@ -296,7 +305,7 @@ export const ChatWindow = ({
                 onChange={setChatInput}
                 onSend={sendMessage}
                 disabled={isLoading || mode !== "chat"}
-                onOpenDataSource={onOpenDataSource}
+                onOpenDataSource={isPrivateUser ? onOpenDataSource : undefined}
               />
               {/* <div className="mt-0 flex items-center justify-center gap-4 text-[10px] text-[var(--text-secondary)]/60 uppercase tracking-[0.2em] font-black">
                 <span className="w-1 h-1 rounded-full bg-[var(--border)]" />

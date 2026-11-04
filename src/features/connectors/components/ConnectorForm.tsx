@@ -406,7 +406,7 @@ export const ConnectorForm = ({ onBack, onTestSuccess }: ConnectorFormProps) => 
           className="flex items-center gap-2 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors mb-4 group shrink-0"
         >
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Back to Connectors
+          Back to Dashboard
         </button>
 
         <Card className="border-[var(--border)] shadow-xl flex flex-col min-h-0 flex-1">

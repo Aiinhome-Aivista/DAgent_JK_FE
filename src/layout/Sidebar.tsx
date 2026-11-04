@@ -128,17 +128,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
       <div className="p-4 flex items-center justify-between">
-        {isSidebarOpen && (
+        {isSidebarOpen ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex items-center gap-2 font-bold text-lg"
+            onClick={() => {
+              setActiveTab("chat");
+              resetConnectorState();
+            }}
+            className="flex items-center gap-2 font-bold text-lg cursor-pointer hover:opacity-80 transition-opacity select-none group"
+            title="Go to Dashboard"
           >
-            <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white text-sm">
+            <div className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white text-sm shadow-sm group-hover:scale-105 transition-transform">
               D
             </div>
             <span>DAgent</span>
           </motion.div>
+        ) : (
+          <div
+            onClick={() => {
+              setActiveTab("chat");
+              resetConnectorState();
+            }}
+            className="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center text-white text-sm shadow-sm cursor-pointer hover:opacity-80 transition-opacity select-none hover:scale-105"
+            title="Go to Dashboard"
+          >
+            D
+          </div>
         )}
         <button
           onClick={() => setSidebarOpen(!isSidebarOpen)}

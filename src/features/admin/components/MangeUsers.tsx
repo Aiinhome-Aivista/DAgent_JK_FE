@@ -52,14 +52,14 @@ export const MangeUser: React.FC<MangeUsersProps> = ({
 
     const filteredUsers = users.filter(u => {
         const q = searchQuery.toLowerCase();
-        const roleLabel = u.role_id === 4 ? "support user" : "end user";
+        const roleLabel = u.role_id === 4 ? "admin user" : "end user";
         const visibilityLabel = u.visibility === 2 ? "private" : "public";
         return (u.name || "").toLowerCase().includes(q) ||
-               (u.email || "").toLowerCase().includes(q) ||
-               (u.company_name || "").toLowerCase().includes(q) ||
-               roleLabel.includes(q) ||
-               visibilityLabel.includes(q) ||
-               (u.workspaces || "").toLowerCase().includes(q);
+            (u.email || "").toLowerCase().includes(q) ||
+            (u.company_name || "").toLowerCase().includes(q) ||
+            roleLabel.includes(q) ||
+            visibilityLabel.includes(q) ||
+            (u.workspaces || "").toLowerCase().includes(q);
     });
 
     const handleCreateUser = async (e: React.FormEvent) => {
@@ -212,7 +212,7 @@ export const MangeUser: React.FC<MangeUsersProps> = ({
                     style={{ width: '15%' }}
                     body={(user: AdminUser) => (
                         <span className={user.role_id === 4 ? 'text-indigo-500' : 'text-[var(--text-primary)]'}>
-                            {user.role_id === 4 ? 'Support User' : 'End User'}
+                            {user.role_id === 4 ? 'Admin User' : 'End User'}
                         </span>
                     )}
                 />
@@ -410,7 +410,7 @@ export const MangeUser: React.FC<MangeUsersProps> = ({
                                                 onChange={() => setEditFormData({ ...editFormData, role_id: 4, visibility: 2 })}
                                                 className="text-[var(--accent)] focus:ring-[var(--accent)]"
                                             />
-                                            <span className="text-sm text-[var(--text-primary)]">Support User</span>
+                                            <span className="text-sm text-[var(--text-primary)]">Admin User</span>
                                         </label>
                                     </div>
                                 </div>
@@ -580,7 +580,7 @@ export const MangeUser: React.FC<MangeUsersProps> = ({
                                                 onChange={() => setFormData({ ...formData, role_id: 4, visibility: 2 })}
                                                 className="text-[var(--accent)] focus:ring-[var(--accent)]"
                                             />
-                                            <span className="text-sm text-[var(--text-primary)]">Support User</span>
+                                            <span className="text-sm text-[var(--text-primary)]">Admin User</span>
                                         </label>
                                     </div>
                                 </div>

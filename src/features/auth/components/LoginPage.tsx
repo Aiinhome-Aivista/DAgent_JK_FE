@@ -23,7 +23,7 @@ interface LoginPageProps {
 }
 
 export const LoginPage = ({ onBack, onLoginSuccess, isAdminLogin = false }: LoginPageProps) => {
-  const { setUserId, setUserName, setRoleId, setRoleName } = useAuthContext();
+  const { setUserId, setUserName, setRoleId, setRoleName, setVisibility } = useAuthContext();
   const [showPassword, setShowPassword] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [email, setEmail] = React.useState('');
@@ -50,6 +50,11 @@ export const LoginPage = ({ onBack, onLoginSuccess, isAdminLogin = false }: Logi
           }
           if (response.data.role_name !== undefined) {
             setRoleName(response.data.role_name);
+          }
+          if (response.data.visibility !== undefined) {
+            setVisibility(response.data.visibility);
+          } else if (response.data.role_id === 4 || response.data.role_name === 'Admin') {
+            setVisibility(2);
           }
           if (response.data.active_workspace) {
             localStorage.setItem('DAgent_active_workspace', JSON.stringify(response.data.active_workspace));

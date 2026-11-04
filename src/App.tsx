@@ -299,7 +299,7 @@ function AppContent() {
 
   const handleBackToConnectors = () => {
     setSelectedConnector(null);
-    changeTab('connectors');
+    changeTab('chat');
   };
 
   const handleStartWorkflow = async (connectionName?: string, shouldSwitchTab: boolean = false) => {

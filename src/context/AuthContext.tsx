@@ -1,14 +1,17 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { adminService } from '../services/admin.service';
 
 interface AuthContextType {
   userId: number | null;
   userName: string | null;
   roleId: number | null;
   roleName: string | null;
+  visibility: number | null;
   setUserId: (id: number | null) => void;
   setUserName: (name: string | null) => void;
   setRoleId: (id: number | null) => void;
   setRoleName: (name: string | null) => void;
+  setVisibility: (vis: number | null) => void;
   logout: () => void;
 }
 
@@ -31,6 +34,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [roleName, setRoleName] = useState<string | null>(() => {
     return localStorage.getItem('DAgent_role_name');
+  });
+
+  const [visibility, setVisibilityState] = useState<number | null>(() => {
+    const stored = localStorage.getItem('DAgent_user_visibility');
+    return stored ? parseInt(stored, 10) : null;
   });
 
   const handleSetUserId = (id: number | null) => {
@@ -69,19 +77,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const handleSetVisibility = (vis: number | null) => {
+    setVisibilityState(vis);
+    if (vis !== null) {
+      localStorage.setItem('DAgent_user_visibility', vis.toString());
+    } else {
+      localStorage.removeItem('DAgent_user_visibility');
+    }
+  };
+
+  useEffect(() => {
+    // If user is logged in but visibility is not yet saved, fetch user's record
+    if (userId && visibility === null) {
+      adminService.getUsers().then(res => {
+        if (res?.data && Array.isArray(res.data)) {
+          const me = res.data.find((u: any) => u.id === userId);
+          if (me && me.visibility !== undefined) {
+            handleSetVisibility(me.visibility);
+          }
+        }
+      }).catch(() => {});
+    }
+  }, [userId, visibility]);
+
   const logout = () => {
     setUserId(null);
     setUserName(null);
     setRoleId(null);
     setRoleName(null);
+    setVisibilityState(null);
     localStorage.removeItem('DAgent_user_id');
     localStorage.removeItem('DAgent_user_name');
     localStorage.removeItem('DAgent_role_id');
     localStorage.removeItem('DAgent_role_name');
+    localStorage.removeItem('DAgent_user_visibility');
   };
 
   return (
-    <AuthContext.Provider value={{ userId, userName, roleId, roleName, setUserId: handleSetUserId, setUserName: handleSetUserName, setRoleId: handleSetRoleId, setRoleName: handleSetRoleName, logout }}>
+    <AuthContext.Provider value={{
+      userId,
+      userName,
+      roleId,
+      roleName,
+      visibility,
+      setUserId: handleSetUserId,
+      setUserName: handleSetUserName,
+      setRoleId: handleSetRoleId,
+      setRoleName: handleSetRoleName,
+      setVisibility: handleSetVisibility,
+      logout
+    }}>
       {children}
     </AuthContext.Provider>
   );
