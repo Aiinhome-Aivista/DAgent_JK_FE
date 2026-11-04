@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
-import {useSessionId, queuedFetch } from "./dashboardHooks";
+import { useSessionId, queuedFetch } from "./dashboardHooks";
+
 
 import { Loader2 } from "lucide-react";
+
 
 export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const sessionId = useSessionId();
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -20,7 +23,7 @@ export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => 
         const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.CATEGORY_SALES}?session_id=${sessionId}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`;
         const response = await queuedFetch(url);
         const json = await response.json();
-        
+
         if (json.status === "success" && json.data) {
           const formattedData = json.data.map((item: any) => ({
             title: item.category || item.CATEGORY || item.category_name || item.CAT_DESC || item.cat_desc || item.title || "Category",
@@ -40,6 +43,7 @@ export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => 
     fetchData();
   }, [sessionId, zone]);
 
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 flex flex-col min-h-[300px]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-start gap-4 mb-6">
@@ -47,25 +51,42 @@ export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => 
           Category Sales
         </h3>
       </div>
-      
+
       <div className="flex-1 min-h-[200px] flex items-center justify-center">
         {isLoading ? (
           <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
         ) : data.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full">
-            {data.map((item, index) => (
-              <div
-                key={index}
-                className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-4 flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-sm transition-all"
-              >
-                <span className="text-indigo-950 font-bold text-lg">
-                  {item.value}
-                </span>
-                <span className="text-slate-600 text-xs font-semibold text-center uppercase tracking-wider">
-                  {item.title}
-                </span>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-4 w-full">
+            {data.map((item, index) => {
+              const isLastSingleOnMd = data.length % 3 === 1 && index === data.length - 1;
+              const isLastPairOnMd = data.length % 3 === 2 && index >= data.length - 2;
+              const isLastOddOnSm = data.length % 2 !== 0 && index === data.length - 1;
+
+
+              let colSpanClass = "sm:col-span-1 md:col-span-2";
+              if (isLastSingleOnMd) {
+                colSpanClass = `${isLastOddOnSm ? "sm:col-span-2" : "sm:col-span-1"} md:col-span-6`;
+              } else if (isLastPairOnMd) {
+                colSpanClass = `${isLastOddOnSm ? "sm:col-span-2" : "sm:col-span-1"} md:col-span-3`;
+              } else if (isLastOddOnSm) {
+                colSpanClass = "sm:col-span-2 md:col-span-2";
+              }
+
+
+              return (
+                <div
+                  key={index}
+                  className={`bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-xl p-4 flex flex-col items-center justify-center gap-2 shadow-xs hover:shadow-sm transition-all ${colSpanClass}`}
+                >
+                  <span className="text-indigo-950 font-bold text-lg">
+                    {item.value}
+                  </span>
+                  <span className="text-slate-600 text-xs font-semibold text-center uppercase tracking-wider">
+                    {item.title}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <span className="text-slate-400 font-medium text-sm">
@@ -76,3 +97,4 @@ export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => 
     </div>
   );
 };
+
