@@ -223,11 +223,11 @@ export const DashboardKPIs = () => {
     <div className="flex flex-col gap-3 w-full h-full">
       <div className="flex justify-between items-center px-1 shrink-0">
         <div className="flex flex-col">
-          <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+          <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-wider">
             Key Metrics
           </h3>
           {lastSyncedTime && (
-            <span className="text-[9px] font-medium text-slate-400 mt-0.5" title={`Synced: ${lastSyncedTime}`}>
+            <span className="text-[9px] font-semibold text-slate-900 mt-0.5" title={`Synced: ${lastSyncedTime}`}>
               Synced: {formatSyncTime(lastSyncedTime)}
             </span>
           )}

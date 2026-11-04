@@ -46,10 +46,13 @@ export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => 
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-slate-100 p-6 flex flex-col min-h-[300px]">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-start gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-start gap-3 mb-6">
         <h3 className="text-slate-800 font-bold text-lg text-left">
           Category Sales
         </h3>
+        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+          2026
+        </span>
       </div>
 
       <div className="flex-1 min-h-[200px] flex items-center justify-center">
