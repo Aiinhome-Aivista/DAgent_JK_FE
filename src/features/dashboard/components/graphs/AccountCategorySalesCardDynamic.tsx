@@ -25,10 +25,15 @@ export const AccountCategorySalesCardDynamic = ({ zone }: { zone?: string | null
         const json = await response.json();
 
         if (json.status === "success" && json.data) {
-          const mappedData = json.data.map((item: any) => ({
-            title: item.title || item.TITLE || item.label || item.category || "Account Category",
-            value: item.value || item.VALUE || (item.valCr ? `₹${item.valCr} Cr` : "-")
-          }));
+          const mappedData = json.data
+            .filter((item: any) => {
+              const rawTitle = String(item.title || item.TITLE || item.label || item.category || "").trim();
+              return rawTitle && !["account category", "unknown", "0", "null", "none"].includes(rawTitle.toLowerCase());
+            })
+            .map((item: any) => ({
+              title: (item.title || item.TITLE || item.label || item.category || "").trim(),
+              value: item.value || item.VALUE || (item.valCr ? `₹${item.valCr} Cr` : "-")
+            }));
           setData(mappedData);
         } else {
           setData([]);

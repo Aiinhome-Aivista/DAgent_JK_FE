@@ -23,7 +23,47 @@ export const SchedulerConfigCard = () => {
       const interval = setInterval(() => {
         fetchConfig();
       }, 5000);
-      return () => clearInterval(interval);
+      const format12Hour = (dateTimeStr?: string | null) => {
+    if (!dateTimeStr) return "";
+    try {
+      const clean = String(dateTimeStr).trim();
+      // Handle "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM"
+      const parts = clean.split(" ");
+      if (parts.length === 2 && parts[1].includes(":")) {
+        const datePart = parts[0];
+        const timeParts = parts[1].split(":");
+        const hour = parseInt(timeParts[0], 10);
+        if (!isNaN(hour)) {
+          const ampm = hour >= 12 ? "PM" : "AM";
+          const displayHour = hour % 12 || 12;
+          const hh = displayHour.toString().padStart(2, "0");
+          const mm = timeParts[1] || "00";
+          const ss = timeParts[2] ? `:${timeParts[2]}` : "";
+          return `${datePart} ${hh}:${mm}${ss} ${ampm}`;
+        }
+      }
+      // Handle simple "HH:MM"
+      if (clean.includes(":") && !clean.includes(" ")) {
+        const [h, m] = clean.split(":");
+        const hour = parseInt(h, 10);
+        if (!isNaN(hour)) {
+          const ampm = hour >= 12 ? "PM" : "AM";
+          const displayHour = hour % 12 || 12;
+          return `${displayHour.toString().padStart(2, "0")}:${m} ${ampm}`;
+        }
+      }
+      // Handle "Today at HH:MM"
+      if (clean.toLowerCase().startsWith("today at ")) {
+        const timePart = clean.substring(9).trim();
+        return `Today at ${format12Hour(timePart)}`;
+      }
+      return dateTimeStr;
+    } catch {
+      return dateTimeStr;
+    }
+  };
+
+  return () => clearInterval(interval);
     }
   }, [statusInfo?.last_run_status]);
 
@@ -124,7 +164,7 @@ export const SchedulerConfigCard = () => {
           {/* Schedule Time */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              Daily Scheduled Time (24H)
+              Daily Scheduled Time
             </label>
             <input
               type="time"
@@ -239,7 +279,7 @@ export const SchedulerConfigCard = () => {
                 Last Synced At
               </span>
               <span className="text-sm font-medium text-[var(--text-primary)] mt-1">
-                {statusInfo?.last_run_at || "Never synced"}
+                {statusInfo?.last_run_at ? format12Hour(statusInfo.last_run_at) : "Never synced"}
               </span>
             </div>
 
@@ -257,7 +297,7 @@ export const SchedulerConfigCard = () => {
                 Next Scheduled Run
               </span>
               <span className="text-sm font-medium text-[var(--accent)] mt-1">
-                {statusInfo?.next_run_at || `Today at ${scheduleTime}`}
+                {statusInfo?.next_run_at ? format12Hour(statusInfo.next_run_at) : format12Hour(`Today at ${scheduleTime}`)}
               </span>
             </div>
           </div>
