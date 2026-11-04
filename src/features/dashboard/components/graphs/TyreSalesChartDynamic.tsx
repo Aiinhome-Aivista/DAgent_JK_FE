@@ -42,6 +42,26 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
   const [tyreRegion, setTyreRegion] = useState("ALL");
   const [tyreConstructionType, setTyreConstructionType] = useState("ALL");
 
+  // Filter regions dynamically based on selected Zone (Hierarchical / Dependent)
+  const filteredRegions = React.useMemo(() => {
+    if (!tyreZone || tyreZone.toUpperCase() === "ALL") {
+      return availableRegions;
+    }
+    return availableRegions.filter((r: any) => {
+      const isObj = typeof r === "object" && r !== null;
+      const zCode = isObj ? (r.zone_code ?? r.zone ?? "") : "";
+      const val = isObj ? (r.value ?? r.val ?? "") : r;
+      if (String(val).toUpperCase() === "ALL") return true;
+      return String(zCode).trim().toUpperCase() === String(tyreZone).trim().toUpperCase();
+    });
+  }, [availableRegions, tyreZone]);
+
+  const handleZoneChange = (e: any) => {
+    const selectedZone = e?.target?.value ?? e;
+    setTyreZone(selectedZone);
+    setTyreRegion("ALL"); // Reset region to ALL whenever zone changes
+  };
+
   useEffect(() => {
     const fetchTyreData = async () => {
       setIsTyreLoading(true);
@@ -147,14 +167,14 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
           <FilterSelect
             label="Zone"
             value={tyreZone}
-            onChange={(e) => setTyreZone(e.target.value)}
+            onChange={handleZoneChange}
             options={availableZones}
           />
           <FilterSelect
             label="Region"
             value={tyreRegion}
             onChange={(e) => setTyreRegion(e.target.value)}
-            options={availableRegions}
+            options={filteredRegions}
           />
           <FilterSelect
             label="Customer Category"
