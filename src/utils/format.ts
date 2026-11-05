@@ -23,21 +23,18 @@ export const filterOutOntologyAndConclusion = (text: string): string => {
     '\n'
   );
 
-  // 3. Remove Coverage Gaps in Architecture / Route-to-Market Architecture
+  // 3. Remove Coverage Gaps in Architecture / Route-to-Market Architecture section
   cleaned = cleaned.replace(
-    /(?:^|\n)\s*(?:###\s*|\*\*)?Coverage Gaps in[^\n]*Architecture(?:\*\*)?:?[\s\S]*?(?=(?:\n\s*###|$))/gi,
+    /(?:^|\n)\s*(?:###\s*|\*\*)?(?:\d+\.\s*)?Coverage\s+Gaps\b[^\n]*(?:\*\*)?:?[\s\S]*?(?=(?:\n\s*(?:###|\*\*\d+\.|\*\*Business Risks|\*\*Actionable Recommendations))|$)/gi,
     '\n'
   );
 
-  // 4. Remove sentences mentioning ontology analysis or gaps from Executive Summary
+  // 4. Remove sentences mentioning ontology analysis, core framework, or data coverage gaps from Executive Summary
   cleaned = cleaned.replace(
-    /(?:The\s+)?ontology\s+analysis\s+reveals\s+critical\s+gaps[^\.]*\.?/gi,
+    /(?<=(?:^|[.!?]\s+|\n\s*))[^.!?\n]*?\b(?:ontology|gaps\s+in\s+(?:route-to-market\s+)?data\s+coverage|core\s+framework)\b[\s\S]*?(?:\.(?!\d)|$)/gi,
     ''
   );
-  cleaned = cleaned.replace(
-    /Critical\s+gaps\s+in\s+(?:route-to-market\s+)?data\s+coverage[^\.]*\.?/gi,
-    ''
-  );
+  cleaned = cleaned.replace(/\s{2,}/g, ' ').replace(/\s+\./g, '.');
 
   // 5. Clean up Route-to-Market mentions in the title if present
   cleaned = cleaned.replace(
