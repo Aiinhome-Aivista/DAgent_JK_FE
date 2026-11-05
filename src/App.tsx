@@ -404,6 +404,7 @@ function AppContent() {
 
       // We maintain the history object for the sidebar and database
       let newSessionHistory = [];
+      const currentTimestamp = new Date().toISOString();
       if (isExisting && existingSessionHistory.length > 0) {
         newSessionHistory = [...existingSessionHistory];
         newSessionHistory[0] = {
@@ -411,10 +412,14 @@ function AppContent() {
           question: questionToUse, // ensure question is default_DD_MM_YYYY
           answer: summary,
           visualizations: [],
-          follow_up_questions: newTurn.follow_up_questions
+          follow_up_questions: newTurn.follow_up_questions,
+          created_at: currentTimestamp
         };
       } else {
-        newSessionHistory = [newTurn];
+        newSessionHistory = [{
+          ...newTurn,
+          created_at: currentTimestamp
+        }];
       }
 
       if (isSummaryChanged) {
@@ -465,6 +470,7 @@ function AppContent() {
       localStorage.setItem('current_visit_number', nextVisitNumber.toString());
       localStorage.setItem('selected_query_session_name', defaultName);
       localStorage.setItem('default_workspace_analysis', JSON.stringify(newSessionHistory));
+      localStorage.setItem('default_workspace_analysis_time', currentTimestamp);
       window.dispatchEvent(new Event('default-workspace-updated'));
 
       // Now switch to chat tab

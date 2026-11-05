@@ -1,3 +1,37 @@
+/**
+ * Toggles whether Route-to-Market (RtM) Ontology Benchmark and Strategic Conclusion
+ * are displayed in the UI analysis.
+ * Currently commented out / hidden per user requirement. Set to true to re-enable later if requested.
+ */
+export const SHOW_RTM_AND_STRATEGIC_CONCLUSION = false;
+
+export const filterOutOntologyAndConclusion = (text: string): string => {
+  if (!text || typeof text !== 'string') return '';
+  if (SHOW_RTM_AND_STRATEGIC_CONCLUSION) return text;
+
+  let cleaned = text;
+
+  // 1. Remove Section 8: Route-to-Market (RtM) Ontology Benchmark and all its bullet points
+  cleaned = cleaned.replace(
+    /(?:^|\n)\s*(?:\*\*)?8\.?\s*(?:Route-to-Market|RtM)[^\n]*(?:\*\*)?[\s\S]*?(?=(?:\n\s*###|\n\s*\*\*\d+\.|\n\s*Business Risks|$))/gi,
+    '\n'
+  );
+
+  // 2. Remove Strategic Conclusion
+  cleaned = cleaned.replace(
+    /(?:^|\n)\s*(?:###\s*|\*\*)?Strategic Conclusion(?:\*\*)?:?[\s\S]*?(?=(?:\n\s*###|$))/gi,
+    '\n'
+  );
+
+  // 3. Clean up Route-to-Market mentions in the title if present
+  cleaned = cleaned.replace(
+    /(?:,\s*)?(?:and\s+)?(?:with\s+)?Route-to-Market\s*(?:\(RtM\))?\s*(?:Capability\s*Gaps|Ontology\s*Benchmark)?/gi,
+    ''
+  );
+
+  return cleaned.trim();
+};
+
 /**
  * Formats a chat message string supporting a subset of Markdown:
  * - Code blocks (with language header)
@@ -9,7 +43,10 @@
  * - Paragraphs and spacing
  */
 export const formatChatMessage = (text: string, isAssistant: boolean): string => {
-  if (typeof text !== 'string') return '';
+  if (typeof text !== 'string') return '';
+
+  // Filter out Route-to-Market & Strategic Conclusion if disabled
+  text = filterOutOntologyAndConclusion(text);
 
   // Replace dollar sign with rupee sign in the chat response
   text = text.replace(/\$/g, '₹');

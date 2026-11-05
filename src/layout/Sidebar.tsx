@@ -749,9 +749,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                       }
                                                       if (
                                                         session.querySessionName &&
-                                                        session.querySessionName.startsWith(
-                                                          "default_",
-                                                        )
+                                                        session.querySessionName.trim().toLowerCase().startsWith("default")
                                                       ) {
                                                         localStorage.setItem(
                                                           "is_default_chat",

@@ -56,7 +56,9 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
       const chatSessionId = sessionId || localStorage.getItem('DAgent_session_id');
 
       // Check if we are currently in the read-only default chat
-      const isDefaultChat = localStorage.getItem('is_default_chat') === 'true';
+      const storedSessionName = localStorage.getItem('selected_query_session_name') || '';
+      const isDefaultChat = localStorage.getItem('is_default_chat') === 'true' ||
+                            storedSessionName.trim().toLowerCase().startsWith('default');
       let currentVisitNumber = localStorage.getItem('current_visit_number');
 
       if (isDefaultChat) {

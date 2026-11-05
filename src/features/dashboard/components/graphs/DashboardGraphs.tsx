@@ -18,7 +18,7 @@ import {
   Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { formatChatMessage } from "../../../../utils/format";
+import { formatChatMessage, filterOutOntologyAndConclusion } from "../../../../utils/format";
 
 import { YearComparisonChartDynamic } from "./YearComparisonChartDynamic";
 import { ZonePieChartDynamic } from "./ZonePieChartDynamic";
@@ -109,7 +109,7 @@ const parseSessionData = (session: any) => {
       return null;
     }
 
-    let rawAnswer = firstTurn.answer;
+    let rawAnswer = typeof firstTurn.answer === "string" ? filterOutOntologyAndConclusion(firstTurn.answer) : firstTurn.answer;
 
     // Remove markdown json blocks
     rawAnswer = rawAnswer.replace(/```json[\s\S]*?```/gi, "").trim();
