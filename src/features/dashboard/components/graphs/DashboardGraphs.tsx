@@ -44,7 +44,7 @@ const formatInlineMarkdown = (text: string) => {
   // Replace **text** with a bold tag matching theme primary text
   escaped = escaped.replace(
     /\*\*([^*]+)\*\*/g,
-    '<strong class="font-bold text-[var(--text-primary)]">$1</strong>',
+    '<strong class="font-bold text-slate-900">$1</strong>',
   );
 
   // Replace *text* with an italic tag
@@ -303,7 +303,7 @@ const renderSectionItems = (items: string[]) => {
           return (
             <div
               key={idx}
-              className="flex items-start gap-1.5 pl-4 text-slate-600 text-sm leading-relaxed"
+              className="flex items-start gap-1.5 pl-4 text-slate-800 text-sm leading-relaxed"
             >
               <span className="mr-1 select-none text-slate-800 font-bold">
                 •
@@ -325,7 +325,7 @@ const renderSectionItems = (items: string[]) => {
           return (
             <div
               key={idx}
-              className="flex items-start gap-1.5 pl-4 text-slate-600 text-sm leading-relaxed"
+              className="flex items-start gap-1.5 pl-4 text-slate-800 text-sm leading-relaxed"
             >
               <span className="mr-1 font-semibold text-indigo-500 w-4 text-right shrink-0">
                 {num}.
@@ -344,7 +344,7 @@ const renderSectionItems = (items: string[]) => {
         return (
           <p
             key={idx}
-            className="text-slate-600 text-sm leading-relaxed pl-6"
+            className="text-slate-800 text-sm leading-relaxed pl-6"
             dangerouslySetInnerHTML={{ __html: formatInlineMarkdown(text) }}
           />
         );
@@ -467,7 +467,7 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
           {!isExpanded ? (
             <div className="flex items-end justify-between gap-4">
               <div
-                className="text-slate-600 text-sm leading-relaxed font-normal line-clamp-2 flex-1"
+                className="text-slate-800 text-sm leading-relaxed font-normal line-clamp-2 flex-1"
                 dangerouslySetInnerHTML={{
                   __html: formatChatMessage(
                     execSummary
@@ -493,7 +493,7 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
             >
               {/* Executive Summary Paragraphs */}
               <div
-                className="flex flex-col gap-2 text-slate-600 text-sm leading-relaxed font-normal"
+                className="flex flex-col gap-2 text-slate-800 text-sm leading-relaxed font-normal"
                 dangerouslySetInnerHTML={{
                   __html: formatChatMessage(
                     execSummary
@@ -516,7 +516,7 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
                     </span>
                   </div>
                   <div
-                    className="flex flex-col gap-2 mt-1.5 pl-1 text-slate-600 text-sm leading-relaxed font-normal"
+                    className="flex flex-col gap-2 mt-1.5 pl-1 text-slate-800 text-sm leading-relaxed font-normal"
                     dangerouslySetInnerHTML={{
                       __html: formatChatMessage(keyInsights.join("\n"), true)
                     }}
@@ -537,7 +537,7 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
                     </span>
                   </div>
                   <div
-                    className="flex flex-col gap-2 mt-1.5 pl-1 text-slate-600 text-sm leading-relaxed font-normal"
+                    className="flex flex-col gap-2 mt-1.5 pl-1 text-slate-800 text-sm leading-relaxed font-normal"
                     dangerouslySetInnerHTML={{
                       __html: formatChatMessage(recommendations.join("\n"), true)
                     }}
