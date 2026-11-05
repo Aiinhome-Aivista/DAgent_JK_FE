@@ -23,7 +23,23 @@ export const filterOutOntologyAndConclusion = (text: string): string => {
     '\n'
   );
 
-  // 3. Clean up Route-to-Market mentions in the title if present
+  // 3. Remove Coverage Gaps in Architecture / Route-to-Market Architecture
+  cleaned = cleaned.replace(
+    /(?:^|\n)\s*(?:###\s*|\*\*)?Coverage Gaps in[^\n]*Architecture(?:\*\*)?:?[\s\S]*?(?=(?:\n\s*###|$))/gi,
+    '\n'
+  );
+
+  // 4. Remove sentences mentioning ontology analysis or gaps from Executive Summary
+  cleaned = cleaned.replace(
+    /(?:The\s+)?ontology\s+analysis\s+reveals\s+critical\s+gaps[^\.]*\.?/gi,
+    ''
+  );
+  cleaned = cleaned.replace(
+    /Critical\s+gaps\s+in\s+(?:route-to-market\s+)?data\s+coverage[^\.]*\.?/gi,
+    ''
+  );
+
+  // 5. Clean up Route-to-Market mentions in the title if present
   cleaned = cleaned.replace(
     /(?:,\s*)?(?:and\s+)?(?:with\s+)?Route-to-Market\s*(?:\(RtM\))?\s*(?:Capability\s*Gaps|Ontology\s*Benchmark)?/gi,
     ''

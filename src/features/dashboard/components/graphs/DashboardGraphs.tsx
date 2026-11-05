@@ -73,7 +73,11 @@ const cleanParagraphText = (text: string) => {
 const getRelativeTimeString = (dateStr?: string | null): string => {
   if (!dateStr) return "";
   try {
-    const date = new Date(dateStr);
+    let normalized = dateStr.trim();
+    if (!normalized.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(normalized)) {
+      normalized = normalized.replace(" ", "T") + "Z";
+    }
+    const date = new Date(normalized);
     if (isNaN(date.getTime())) return "";
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -200,7 +204,10 @@ const parseSessionData = (session: any) => {
       );
 
       // Stop parsing if we hit a follow-up questions section
-      if (/^(follow[- ]?up questions?|suggested questions?|questions to ask|key questions):?/i.test(line)) {
+      if (
+        /^(follow[- ]?up questions?|suggested questions?|questions to ask|key questions):?/i.test(line) ||
+        /^(?:#+\s*|\*\*)?Coverage Gaps in/i.test(line)
+      ) {
         break;
       }
 
