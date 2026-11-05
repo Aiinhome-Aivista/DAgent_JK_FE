@@ -34,7 +34,7 @@ export const filterOutOntologyAndConclusion = (text: string): string => {
     /(?<=(?:^|[.!?]\s+|\n\s*))[^.!?\n]*?\b(?:ontology|gaps\s+in\s+(?:route-to-market\s+)?data\s+coverage|core\s+framework)\b[\s\S]*?(?:\.(?!\d)|$)/gi,
     ''
   );
-  cleaned = cleaned.replace(/\s{2,}/g, ' ').replace(/\s+\./g, '.');
+  cleaned = cleaned.replace(/[ \t]{2,}/g, ' ').replace(/[ \t]+\./g, '.');
 
   // 5. Clean up Route-to-Market mentions in the title if present
   cleaned = cleaned.replace(
