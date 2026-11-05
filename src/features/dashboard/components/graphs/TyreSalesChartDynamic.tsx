@@ -200,7 +200,7 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
             No data available.
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <BarChart
               data={tyreData}
               layout="vertical"

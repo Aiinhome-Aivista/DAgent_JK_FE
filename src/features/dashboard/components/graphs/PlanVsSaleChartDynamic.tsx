@@ -312,7 +312,7 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({ onZoneC
 
         ) : dynamicRegionData.length > 0 ? (
 
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
 
             <ComposedChart
 

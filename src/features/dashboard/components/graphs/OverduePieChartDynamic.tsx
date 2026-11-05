@@ -95,7 +95,7 @@ export const OverduePieChartDynamic = ({ zone }: { zone?: string | null }) => {
         {isLoading ? (
           <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
         ) : data.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <PieChart>
               <Tooltip
                 contentStyle={{

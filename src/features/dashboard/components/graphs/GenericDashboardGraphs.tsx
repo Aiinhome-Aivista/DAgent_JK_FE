@@ -84,7 +84,7 @@ export const GenericDashboardGraphs = () => {
         <h4 className="font-semibold text-slate-800 text-sm mb-1">{chart.title}</h4>
         <p className="text-xs text-slate-500 mb-4">{chart.description}</p>
         <div className="flex-1 min-h-0 relative">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             {chart.chart_type === 'pie' ? (
               <PieChart>
                 <Pie

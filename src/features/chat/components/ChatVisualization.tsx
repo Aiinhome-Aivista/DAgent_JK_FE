@@ -980,7 +980,7 @@ export const ChatVisualization = React.memo(({ visualization }: ChatVisualizatio
 
 
 
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
 
 
 
@@ -1204,7 +1204,7 @@ export const ChatVisualization = React.memo(({ visualization }: ChatVisualizatio
 
 
 
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
 
 
 
@@ -1628,7 +1628,7 @@ export const ChatVisualization = React.memo(({ visualization }: ChatVisualizatio
 
 
 
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
 
 
 

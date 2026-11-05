@@ -658,7 +658,7 @@ export const YearComparisonChartDynamic = ({ zone }: { zone?: string | null }) =
             </span>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             {renderChart()}
           </ResponsiveContainer>
         )}

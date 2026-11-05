@@ -39,7 +39,7 @@ export const DynamicChart = ({ config, index }: { config: any, index: number }) 
         {config.description && <p className="text-xs text-[var(--text-secondary)] mt-1">{config.description}</p>}
       </div>
       <div className="p-4 h-64 w-full">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           {config.chart_type === 'line' ? (
             <LineChart data={data}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
