@@ -24,6 +24,26 @@ interface DomesticSalesRow {
   is_total?: boolean;
 }
 
+interface SalesReportByValuesRow {
+  zone: string;
+  prev_4w: number;
+  prev_23w: number;
+  prev_total: number;
+  target_4w: number;
+  target_23w: number;
+  target_total: number;
+  actual_4w: number;
+  actual_23w: number;
+  actual_total: number;
+  achievement_pct: number;
+  sale_for_the_day: number;
+  asking_rate: number;
+  achvt_4w: number;
+  achvt_23w: number;
+  achvt_total: number;
+  is_total?: boolean;
+}
+
 interface MetaInfo {
   month_abbr: string;
   prev_year_label: string;
@@ -75,7 +95,11 @@ export const DomesticSalesValueAchievementCard = () => {
   });
   const [isSheet1Loading, setIsSheet1Loading] = useState<boolean>(true);
 
-  // Sheets 2-4 fallback preview state
+  // Dedicated Sheet 3 state (Sales Report by Values)
+  const [sheet3Data, setSheet3Data] = useState<SalesReportByValuesRow[]>([]);
+  const [isSheet3Loading, setIsSheet3Loading] = useState<boolean>(false);
+
+  // Sheets 2 & 4 fallback preview state
   const [previewData, setPreviewData] = useState<Record<string, any> | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
@@ -123,7 +147,47 @@ export const DomesticSalesValueAchievementCard = () => {
     }
   };
 
-  // Fetch sheets 2-4 preview data when needed
+  // Fetch dedicated Sheet 3 data (Sales Report by Values)
+  const fetchSheet3Data = async (monthOverride?: number) => {
+    setIsSheet3Loading(true);
+    try {
+      if (!sessionId || sessionId === "null") {
+        setIsSheet3Loading(false);
+        return;
+      }
+
+      const activeMo = monthOverride !== undefined ? monthOverride : selectedMonthNo;
+      let url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_REPORT_BY_VALUES}?session_id=${sessionId}`;
+      if (activeMo) {
+        url += `&month=${encodeURIComponent(activeMo)}`;
+      }
+
+      const response = await queuedFetch(url);
+      const json = await response.json();
+
+      if (json.status === "success" && json.data) {
+        setSheet3Data(json.data);
+        if (json.months && Array.isArray(json.months)) {
+          setMonths(json.months);
+        }
+        if (json.selected_month) {
+          setSelectedMonthNo(json.selected_month);
+        }
+        if (json.meta) {
+          setMeta(json.meta);
+        }
+      } else {
+        setSheet3Data([]);
+      }
+    } catch (e) {
+      console.error("Error fetching sales report by values", e);
+      setSheet3Data([]);
+    } finally {
+      setIsSheet3Loading(false);
+    }
+  };
+
+  // Fetch sheets 2 & 4 preview data when needed
   const fetchPreviewOtherSheets = async () => {
     if (previewData) return;
     setIsPreviewLoading(true);
@@ -148,20 +212,24 @@ export const DomesticSalesValueAchievementCard = () => {
   };
 
   useEffect(() => {
-    fetchSheet1Data();
-  }, [sessionId]);
-
-  useEffect(() => {
-    if (activeTabIndex > 0) {
+    if (activeTabIndex === 0) {
+      fetchSheet1Data();
+    } else if (activeTabIndex === 2) {
+      fetchSheet3Data();
+    } else {
       fetchPreviewOtherSheets();
     }
-  }, [activeTabIndex]);
+  }, [sessionId, activeTabIndex]);
 
   const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const mo = parseInt(e.target.value, 10);
     if (!isNaN(mo)) {
       setSelectedMonthNo(mo);
-      fetchSheet1Data(mo);
+      if (activeTabIndex === 0) {
+        fetchSheet1Data(mo);
+      } else if (activeTabIndex === 2) {
+        fetchSheet3Data(mo);
+      }
     }
   };
 
@@ -230,8 +298,8 @@ export const DomesticSalesValueAchievementCard = () => {
 
         {/* Right Action Toolbar: Month Selector + Download */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Month Selector Dropdown for Sheet 1 */}
-          {activeTabIndex === 0 && (
+          {/* Month Selector Dropdown for Sheet 1 & Sheet 3 */}
+          {(activeTabIndex === 0 || activeTabIndex === 2) && (
             <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-indigo-300 transition-all">
               <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
               <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -240,7 +308,7 @@ export const DomesticSalesValueAchievementCard = () => {
               <select
                 value={selectedMonthNo}
                 onChange={handleMonthChange}
-                disabled={isSheet1Loading}
+                disabled={activeTabIndex === 0 ? isSheet1Loading : isSheet3Loading}
                 className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
               >
                 {months.map((m) => (
@@ -376,8 +444,153 @@ export const DomesticSalesValueAchievementCard = () => {
               No sales summary data available for this month.
             </div>
           )
+        ) : activeTabIndex === 2 ? (
+          /* ================= SHEET 3: Sales Report by Values ================= */
+          isSheet3Loading ? (
+            <div className="flex flex-col items-center justify-center min-h-[200px]">
+              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+              <span className="text-xs text-slate-500 mt-2 font-medium">Calculating zone sales by value...</span>
+            </div>
+          ) : sheet3Data.length > 0 ? (
+            <table className="w-full text-xs border-collapse min-w-[980px] bg-white">
+              <thead>
+                {/* Banner Header Title Row */}
+                <tr>
+                  <th
+                    colSpan={16}
+                    className="bg-[#dcfcfc] text-[#006666] font-bold text-center text-xs py-2 border border-slate-300 uppercase tracking-wide"
+                  >
+                    Sales Report by Values ( In Crores / Rs. )
+                  </th>
+                </tr>
+
+                {/* Sub-header Tier 1 */}
+                <tr className="bg-[#eefbfb] text-slate-800 text-[11px]">
+                  <th
+                    rowSpan={3}
+                    className="border border-slate-300 px-3 py-2 font-bold text-center align-middle w-32"
+                  >
+                    Zone
+                  </th>
+                  <th
+                    colSpan={3}
+                    className="border border-slate-300 px-3 py-1.5 font-bold text-center"
+                  >
+                    {meta.prev_year_label}
+                  </th>
+                  <th
+                    colSpan={12}
+                    className="border border-slate-300 px-3 py-1.5 font-bold text-center"
+                  >
+                    {meta.curr_year_label}
+                  </th>
+                </tr>
+
+                {/* Sub-header Tier 2 */}
+                <tr className="bg-[#eefbfb] text-slate-800 text-[11px]">
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-bold text-center">4 Whlrs.</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-bold text-center">2/3 Whlrs</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-bold text-center">Total</th>
+
+                  <th colSpan={3} className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
+                  <th colSpan={3} className="border border-slate-300 px-2 py-1 font-bold text-center">Actual Sales</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-bold text-center">% Achvd</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-bold text-center">{meta.day_label}</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-bold text-center">Asking Rate</th>
+                  <th colSpan={3} className="border border-slate-300 px-2 py-1 font-bold text-center bg-[#ffe0b2] text-amber-950">% Achvt.</th>
+                </tr>
+
+                {/* Sub-header Tier 3 */}
+                <tr className="bg-[#eefbfb] text-slate-800 text-[11px]">
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">4 Whlrs.</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">2/3 Whlrs</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Total</th>
+
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">4 Whlrs</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">2/3 Whlrs</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Total</th>
+
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center bg-[#ffe0b2] text-amber-950">4 Whlrs</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center bg-[#ffe0b2] text-amber-950">2/3 Whlrs</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center bg-[#ffe0b2] text-amber-950">Total</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {sheet3Data.map((row, idx) => {
+                  const isTotal = row.is_total || row.zone.trim().toLowerCase() === "total";
+                  const rowBg = isTotal
+                    ? "bg-[#fff59d] font-bold text-slate-900"
+                    : idx % 2 === 0
+                    ? "bg-white hover:bg-slate-50/80"
+                    : "bg-slate-50/50 hover:bg-slate-50";
+
+                  return (
+                    <tr key={idx} className={`${rowBg} transition-colors text-slate-700`}>
+                      <td className="border border-slate-300 px-3 py-1.5 text-left font-medium">
+                        {row.zone}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtNum(row.prev_4w)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtNum(row.prev_23w)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono font-semibold">
+                        {fmtNum(row.prev_total)}
+                      </td>
+
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtNum(row.target_4w)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtNum(row.target_23w)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono font-semibold">
+                        {fmtNum(row.target_total)}
+                      </td>
+
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtNum(row.actual_4w)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtNum(row.actual_23w)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono font-semibold">
+                        {fmtNum(row.actual_total)}
+                      </td>
+
+                      <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold">
+                        {row.achievement_pct !== undefined ? `${Math.round(row.achievement_pct)}%` : "0%"}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtNum(row.sale_for_the_day)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {row.asking_rate ? fmtNum(row.asking_rate) : "0.00"}
+                      </td>
+
+                      <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold">
+                        {row.achvt_4w !== undefined ? `${Math.round(row.achvt_4w)}%` : "0%"}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold">
+                        {row.achvt_23w !== undefined ? `${Math.round(row.achvt_23w)}%` : "0%"}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold">
+                        {row.achvt_total !== undefined ? `${Math.round(row.achvt_total)}%` : "0%"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div className="flex items-center justify-center min-h-[180px] text-slate-400 text-sm">
+              No sales report by values data available for this month.
+            </div>
+          )
         ) : (
-          /* ================= SHEETS 2-4: General Preview Fallback ================= */
+          /* ================= SHEETS 2 & 4: General Preview Fallback ================= */
           isPreviewLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[200px]">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
