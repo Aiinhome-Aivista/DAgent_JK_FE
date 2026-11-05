@@ -104,12 +104,12 @@ const parseSessionData = (session: any) => {
     const sessionName = session.querySessionName || "";
 
     // Find the first turn with an assistant answer
-    const firstTurn = history.find((turn: any) => turn.answer);
-    if (!firstTurn || !firstTurn.answer) {
+    const relevantTurn = [...history].reverse().find((turn: any) => turn.answer);
+    if (!relevantTurn || !relevantTurn.answer) {
       return null;
     }
 
-    let rawAnswer = typeof firstTurn.answer === "string" ? filterOutOntologyAndConclusion(firstTurn.answer) : firstTurn.answer;
+    let rawAnswer = typeof relevantTurn.answer === "string" ? filterOutOntologyAndConclusion(relevantTurn.answer) : relevantTurn.answer;
 
     // Remove markdown json blocks
     rawAnswer = rawAnswer.replace(/```json[\s\S]*?```/gi, "").trim();
@@ -268,7 +268,7 @@ const parseSessionData = (session: any) => {
       sectionTitles,
       badge: displayBadge,
       timeBadge,
-      createdAt: firstTurn.created_at || session.created_at || null,
+      createdAt: relevantTurn.created_at || session.created_at || null,
     };
   } catch (e) {
     console.error("Error parsing query session data:", e);

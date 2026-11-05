@@ -122,7 +122,8 @@ function AppContent() {
                   }
                   if (defaultSession && defaultSession.querySessionHistory) {
                     localStorage.setItem('default_workspace_analysis', JSON.stringify(defaultSession.querySessionHistory));
-                    const createdAt = defaultSession.querySessionHistory[0]?.created_at || (defaultSession as any).createdAt;
+                    const hist = defaultSession.querySessionHistory;
+                    const createdAt = hist[hist.length - 1]?.created_at || hist[0]?.created_at || (defaultSession as any).createdAt;
                     if (createdAt) localStorage.setItem('default_workspace_analysis_time', createdAt);
                     window.dispatchEvent(new Event('default-workspace-updated'));
                   } else {
@@ -224,7 +225,8 @@ function AppContent() {
           }
           if (defaultSession && defaultSession.querySessionHistory) {
             localStorage.setItem('default_workspace_analysis', JSON.stringify(defaultSession.querySessionHistory));
-            const createdAt = defaultSession.querySessionHistory[0]?.created_at || (defaultSession as any).createdAt;
+            const hist = defaultSession.querySessionHistory;
+            const createdAt = hist[hist.length - 1]?.created_at || hist[0]?.created_at || (defaultSession as any).createdAt;
             if (createdAt) localStorage.setItem('default_workspace_analysis_time', createdAt);
             window.dispatchEvent(new Event('default-workspace-updated'));
           } else {
