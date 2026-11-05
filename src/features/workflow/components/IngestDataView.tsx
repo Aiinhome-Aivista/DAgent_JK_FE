@@ -293,7 +293,7 @@ export const IngestDataView = ({
 
           return (
             <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className={`grid grid-cols-2 ${isHana ? 'md:grid-cols-3' : 'md:grid-cols-4'} gap-4`}>
                 <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
                   <div className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-1">
                     {isHana ? 'Row Count (Metadata)' : 'Total Rows'}
@@ -316,14 +316,16 @@ export const IngestDataView = ({
                     {isHana ? <span className="text-base text-emerald-400">None ✓</span> : `${dataSize} MB`}
                   </div>
                 </div>
-                <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
-                  <div className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-1">
-                    {isHana ? 'KGraph' : 'Last Sync'}
+                {!isHana && (
+                  <div className="p-4 rounded-xl bg-[var(--surface)] border border-[var(--border)]">
+                    <div className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-1">
+                      Last Sync
+                    </div>
+                    <div className="text-sm font-bold mt-2">
+                      {summary?.last_sync || 'Never'}
+                    </div>
                   </div>
-                  <div className="text-sm font-bold mt-2">
-                    {isHana ? renderKgStatus() : (summary?.last_sync || 'Never')}
-                  </div>
-                </div>
+                )}
               </div>
 
               <div className="mt-6">
