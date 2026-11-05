@@ -322,8 +322,11 @@ export const DomesticSalesValueAchievementCard = () => {
 
               <tbody>
                 {sheet1Data.map((row, idx) => {
-                  const isTotal = row.is_total || row.market_segment.includes("Repl");
-                  const rowBg = isTotal
+                  const isGrandTotal = row.market_segment.trim().toLowerCase() === "domestic";
+                  const isSubTotal = (row.is_total || row.market_segment.includes("Repl") || row.market_segment.includes("OEM + STU + DEF")) && !isGrandTotal;
+                  const rowBg = isGrandTotal
+                    ? "bg-[#dcfcfc] font-bold text-slate-900"
+                    : isSubTotal
                     ? "bg-[#fff59d] font-bold text-slate-900"
                     : idx % 2 === 0
                     ? "bg-white hover:bg-slate-50/80"
