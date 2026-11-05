@@ -92,28 +92,14 @@ const cleanFilename = (fn?: string) => {
 
 
 
-export const ChatVisualization = React.memo(({ visualization }: ChatVisualizationProps) => {
-
-
-
+const CsvExportCard = ({ visualization }: { visualization: Visualization }) => {
   const [isDownloading, setIsDownloading] = React.useState(false);
 
-
-
-
-
-
-
   const handleDownloadCsv = async (viz: any) => {
-
     setIsDownloading(true);
-
     try {
-
       const userId = localStorage.getItem('DAgent_user_id');
-
       const finalName = cleanFilename(viz.filename || 'export.csv');
-
       const rawSql = (viz.sql_query || '').trim();
       let queryB64 = '';
       try {
@@ -134,78 +120,52 @@ export const ChatVisualization = React.memo(({ visualization }: ChatVisualizatio
         },
         finalName
       );
-
-
-
     } catch (err) {
-
-
-
-      console.error("[CSV Download Error]", err);
-
-
-
+      console.error('[CSV Download Error]', err);
     } finally {
-
-
-
       setIsDownloading(false);
-
-
-
     }
-
-
-
   };
 
+  const rawName = cleanFilename(visualization.filename);
+  const displayName = rawName.length > 40 ? `${rawName.slice(0, 36)}...csv` : rawName;
 
-
-
-
-
-
-  if (visualization.type === 'csv_export') {
-    const rawName = cleanFilename(visualization.filename);
-    const displayName = rawName.length > 40 ? `${rawName.slice(0, 36)}...csv` : rawName;
-
-    return (
-      <div className="my-3 w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md">
-        <div className="flex items-center justify-between gap-3">
-          {/* File icon and title */}
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
-              <FileSpreadsheet className="h-5 w-5" />
+  return (
+    <div className="my-3 w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100">
+            <FileSpreadsheet className="h-5 w-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-xs font-bold text-slate-800 truncate" title={rawName}>
+              {displayName}
             </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-800 truncate" title={rawName}>
-                {displayName}
-              </div>
-              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-slate-400">
-                <span className="font-semibold text-emerald-600">
-                  {visualization.total_records ? `${Number(visualization.total_records).toLocaleString()} records` : 'Complete Dataset'}
-                </span>
-                <span>•</span>
-                <span>CSV File</span>
-              </div>
+            <div className="mt-0.5 flex items-center gap-2 text-[11px] text-slate-400">
+              <span className="font-semibold text-emerald-600">
+                {visualization.total_records ? `${Number(visualization.total_records).toLocaleString()} records` : 'Complete Dataset'}
+              </span>
+              <span>•</span>
+              <span>CSV File</span>
             </div>
           </div>
-
-          {/* Download button */}
-          <button
-            type="button"
-            onClick={() => handleDownloadCsv(visualization)}
-            disabled={isDownloading}
-            className="flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all border-none cursor-pointer disabled:opacity-50"
-          >
-            {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            <span>{isDownloading ? "Downloading..." : "Download CSV"}</span>
-          </button>
         </div>
-      </div>
-    );
-  }
 
+        <button
+          type="button"
+          onClick={() => handleDownloadCsv(visualization)}
+          disabled={isDownloading}
+          className="flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all border-none cursor-pointer disabled:opacity-50"
+        >
+          {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+          <span>{isDownloading ? 'Downloading...' : 'Download CSV'}</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const ChartVisualizationInner = React.memo(({ visualization }: ChatVisualizationProps) => {
   const { type, data, title, columns, xKey = 'label', yKey = 'value' } = visualization;
 
 
@@ -598,7 +558,7 @@ export const ChatVisualization = React.memo(({ visualization }: ChatVisualizatio
 
 
 
-          return !(node.classList && node.classList.contains(exclusionClass));
+          return !(node && node.classList && typeof node.classList.contains === "function" && node.classList.contains(exclusionClass));
 
 
 
@@ -1903,6 +1863,15 @@ export const ChatVisualization = React.memo(({ visualization }: ChatVisualizatio
 
 
 
+
+ChartVisualizationInner.displayName = 'ChartVisualizationInner';
+
+export const ChatVisualization = React.memo(({ visualization }: ChatVisualizationProps) => {
+  if (visualization?.type === 'csv_export') {
+    return <CsvExportCard visualization={visualization} />;
+  }
+  return <ChartVisualizationInner visualization={visualization} />;
+});
 
 ChatVisualization.displayName = 'ChatVisualization';
 
