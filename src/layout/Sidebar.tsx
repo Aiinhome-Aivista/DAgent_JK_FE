@@ -620,6 +620,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                               "current_visit_number",
                                             );
                                             localStorage.removeItem(
+                                              "current_chat_id",
+                                            );
+                                            localStorage.removeItem(
                                               "selected_query_session_name",
                                             );
                                             localStorage.removeItem(

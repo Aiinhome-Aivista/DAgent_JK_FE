@@ -67,11 +67,39 @@ interface SalesNumbersRow {
   is_total?: boolean;
 }
 
+interface SalesSummaryNoValuesRow {
+  zone: string;
+  row_type: "Actual" | "Target" | "Achv %" | string;
+  val_4w: number;
+  val_23w: number;
+  val_total: number;
+  tbb: number;
+  tbr: number;
+  lcv_b: number;
+  lcv_r: number;
+  scv_b: number;
+  scv_r: number;
+  car_b: number;
+  car_r: number;
+  jeep_b: number;
+  jeep_r: number;
+  tr_fro: number;
+  tr_rear: number;
+  tr_trail: number;
+  adv: number;
+  three_whlrs: number;
+  scooter: number;
+  motor: number;
+  is_total?: boolean;
+}
+
 interface MetaInfo {
   month_abbr: string;
   prev_year_label: string;
   curr_year_label: string;
   day_label: string;
+  curr_year_short?: string;
+  title_label?: string;
 }
 
 interface MonthItem {
@@ -110,6 +138,16 @@ const fmtCell = (v: number | undefined | null) => {
   });
 };
 
+const fmtInt = (v: number | undefined | null) => {
+  if (v === undefined || v === null) return "0";
+  return Math.round(Number(v)).toLocaleString("en-IN");
+};
+
+const fmtPct = (v: number | undefined | null) => {
+  if (v === undefined || v === null || Number(v) === 0) return "0%";
+  return `${Math.round(Number(v))}%`;
+};
+
 export const DomesticSalesValueAchievementCard = () => {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const activeTab = TABS[activeTabIndex].id;
@@ -134,7 +172,11 @@ export const DomesticSalesValueAchievementCard = () => {
   const [sheet3Data, setSheet3Data] = useState<SalesReportByValuesRow[]>([]);
   const [isSheet3Loading, setIsSheet3Loading] = useState<boolean>(false);
 
-  // Sheets 2 & 4 fallback preview state
+  // Dedicated Sheet 4 state (Sales Summary in No's & Values)
+  const [sheet4Data, setSheet4Data] = useState<SalesSummaryNoValuesRow[]>([]);
+  const [isSheet4Loading, setIsSheet4Loading] = useState<boolean>(false);
+
+  // Sheets fallback preview state (if needed)
   const [previewData, setPreviewData] = useState<Record<string, any> | null>(null);
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
@@ -262,7 +304,47 @@ export const DomesticSalesValueAchievementCard = () => {
     }
   };
 
-  // Fetch sheets 2 & 4 preview data when needed
+  // Fetch dedicated Sheet 4 data (Sales Summary in No's & Values)
+  const fetchSheet4Data = async (monthOverride?: number) => {
+    setIsSheet4Loading(true);
+    try {
+      if (!sessionId || sessionId === "null") {
+        setIsSheet4Loading(false);
+        return;
+      }
+
+      const activeMo = monthOverride !== undefined ? monthOverride : selectedMonthNo;
+      let url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_SUMMARY_NO_VALUES}?session_id=${sessionId}`;
+      if (activeMo) {
+        url += `&month=${encodeURIComponent(activeMo)}`;
+      }
+
+      const response = await queuedFetch(url);
+      const json = await response.json();
+
+      if (json.status === "success" && json.data) {
+        setSheet4Data(json.data);
+        if (json.months && Array.isArray(json.months)) {
+          setMonths(json.months);
+        }
+        if (json.selected_month) {
+          setSelectedMonthNo(json.selected_month);
+        }
+        if (json.meta) {
+          setMeta(json.meta);
+        }
+      } else {
+        setSheet4Data([]);
+      }
+    } catch (e) {
+      console.error("Error fetching sales summary no values", e);
+      setSheet4Data([]);
+    } finally {
+      setIsSheet4Loading(false);
+    }
+  };
+
+  // Fetch sheets fallback preview data when needed
   const fetchPreviewOtherSheets = async () => {
     if (previewData) return;
     setIsPreviewLoading(true);
@@ -293,6 +375,8 @@ export const DomesticSalesValueAchievementCard = () => {
       fetchSheet2Data();
     } else if (activeTabIndex === 2) {
       fetchSheet3Data();
+    } else if (activeTabIndex === 3) {
+      fetchSheet4Data();
     } else {
       fetchPreviewOtherSheets();
     }
@@ -308,6 +392,8 @@ export const DomesticSalesValueAchievementCard = () => {
         fetchSheet2Data(mo);
       } else if (activeTabIndex === 2) {
         fetchSheet3Data(mo);
+      } else if (activeTabIndex === 3) {
+        fetchSheet4Data(mo);
       }
     }
   };
@@ -843,8 +929,195 @@ export const DomesticSalesValueAchievementCard = () => {
               No sales report by values data available for this month.
             </div>
           )
+        ) : activeTabIndex === 3 ? (
+          /* ================= SHEET 4: Sales Summary in No's & Values ================= */
+          isSheet4Loading ? (
+            <div className="flex flex-col items-center justify-center min-h-[200px]">
+              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+              <span className="text-xs text-slate-500 mt-2 font-medium">Calculating zone sales summary in numbers & values...</span>
+            </div>
+          ) : sheet4Data.length > 0 ? (
+            <table className="w-full text-xs border-collapse min-w-[1400px] bg-white">
+              <thead>
+                {/* Banner Header Title Row */}
+                <tr>
+                  <th
+                    colSpan={22}
+                    className="bg-[#fef9c3] text-[#713f12] font-bold text-center text-xs py-2 border border-slate-300 tracking-wide uppercase"
+                  >
+                    {meta.title_label || `Sales Summary in No's & Values for ${meta.month_abbr || "Current"}-${meta.curr_year_short || "26"}`}
+                  </th>
+                </tr>
+
+                {/* Sub-header Tier 1 */}
+                <tr className="bg-[#f8fafc] text-slate-800 text-[11px]">
+                  <th
+                    rowSpan={2}
+                    className="border border-slate-300 px-3 py-2 font-bold text-center align-middle w-28 bg-[#f1f5f9]"
+                  >
+                    Zone
+                  </th>
+                  <th
+                    rowSpan={2}
+                    className="border border-slate-300 px-2 py-2 font-bold text-center align-middle w-20 bg-[#f1f5f9]"
+                  >
+                    Type
+                  </th>
+                  <th
+                    colSpan={3}
+                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#f1f5f9] text-slate-800"
+                  >
+                    Values ( In Crores )
+                  </th>
+                  <th
+                    colSpan={17}
+                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#f1f5f9] text-slate-800"
+                  >
+                    Tyre Numbers / Quantities
+                  </th>
+                </tr>
+
+                {/* Sub-header Tier 2 (Columns) */}
+                <tr className="bg-[#f8fafc] text-slate-800 text-[11px]">
+                  {/* Values */}
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center whitespace-nowrap">4 Whlrs.</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center whitespace-nowrap">2/3 Whlrs</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center whitespace-nowrap font-semibold text-slate-900 bg-slate-100">Total</th>
+
+                  {/* Quantities */}
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">TBB Total</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">TBR Total</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">LCV Bias</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">LCV Rdl</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">SCV Bias</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">SCV Rdl.</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Car Bias</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Car Radial</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Jeep Bias</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Jeep Radial</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Tr. Fro</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Tr. Rear</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Trail</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">ADV</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">3 Whlrs</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Scooter</th>
+                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Motor</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {sheet4Data.map((row, idx) => {
+                  const isTotal = row.is_total || row.zone.trim().toLowerCase() === "total" || row.zone.trim().toLowerCase() === "grand total";
+                  const isTarget = row.row_type === "Target";
+                  const isAchv = row.row_type === "Achv %";
+
+                  let rowBg = "bg-white hover:bg-slate-50/80 text-slate-800";
+                  if (isTotal) {
+                    rowBg = isTarget
+                      ? "bg-[#fef9c3] font-bold text-slate-900"
+                      : "bg-[#fef08a] font-bold text-slate-900";
+                  } else if (isTarget) {
+                    rowBg = "bg-[#eefcf3] font-medium text-emerald-950";
+                  } else if (isAchv) {
+                    rowBg = "bg-slate-50/60 font-semibold text-slate-700";
+                  }
+
+                  const renderValCell = (val: number) => {
+                    if (isAchv) return fmtPct(val);
+                    return fmtNum(val);
+                  };
+
+                  const renderQtyCell = (val: number) => {
+                    if (isAchv) return fmtPct(val);
+                    return fmtInt(val);
+                  };
+
+                  return (
+                    <tr key={idx} className={`${rowBg} transition-colors border-b border-slate-200`}>
+                      <td className="border border-slate-300 px-3 py-1.5 text-left font-medium whitespace-nowrap">
+                        {row.zone}
+                      </td>
+                      <td className={`border border-slate-300 px-2 py-1.5 text-center font-semibold whitespace-nowrap ${
+                        isTarget ? "text-emerald-700" : isAchv ? "text-indigo-600" : "text-slate-800"
+                      }`}>
+                        {row.row_type}
+                      </td>
+
+                      {/* Values */}
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderValCell(row.val_4w)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderValCell(row.val_23w)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono font-semibold">
+                        {renderValCell(row.val_total)}
+                      </td>
+
+                      {/* Quantities */}
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.tbb)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.tbr)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.lcv_b)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.lcv_r)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.scv_b)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.scv_r)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.car_b)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.car_r)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.jeep_b)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.jeep_r)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.tr_fro)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.tr_rear)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.tr_trail)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.adv)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.three_whlrs)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.scooter)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {renderQtyCell(row.motor)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div className="flex items-center justify-center min-h-[180px] text-slate-400 text-sm">
+              No sales summary data available for this month.
+            </div>
+          )
         ) : (
-          /* ================= SHEETS 2 & 4: General Preview Fallback ================= */
+          /* ================= General Preview Fallback ================= */
           isPreviewLoading ? (
             <div className="flex flex-col items-center justify-center min-h-[200px]">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />

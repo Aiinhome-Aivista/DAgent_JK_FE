@@ -60,12 +60,15 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
       const isDefaultChat = localStorage.getItem('is_default_chat') === 'true' ||
                             storedSessionName.trim().toLowerCase().startsWith('default');
       let currentVisitNumber = localStorage.getItem('current_visit_number');
+      let currentChatId = localStorage.getItem('current_chat_id');
 
       if (isDefaultChat) {
         // We branch out into a NEW chat session based on this query.
         localStorage.removeItem('current_visit_number');
+        localStorage.removeItem('current_chat_id');
         localStorage.removeItem('is_default_chat');
         currentVisitNumber = null;
+        currentChatId = null;
         
         // Clear the UI messages to create a fresh chat view
         setMessages([userMessage]);
@@ -87,13 +90,17 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
           session_id: chatSessionId,
           question: content,
           user_id: userId,
-          ...(currentVisitNumber ? { visit_number: parseInt(currentVisitNumber, 10) } : { is_new_query: true })
+          ...(currentVisitNumber ? { visit_number: parseInt(currentVisitNumber, 10) } : { is_new_query: true }),
+          ...(currentChatId ? { chat_id: currentChatId } : {})
         },
         handleStatus
       );
 
       if (response?.visit_number) {
         localStorage.setItem('current_visit_number', response.visit_number.toString());
+      }
+      if (response?.chat_id) {
+        localStorage.setItem('current_chat_id', response.chat_id);
       }
 
       const answerText = response?.answer || '';
@@ -145,17 +152,27 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
         detail: { question: content, answer: answerText }
       }));
 
+      const currentHistoryStr = localStorage.getItem('selected_query_session');
+      let updatedHistory: any[] = [];
+      try {
+        updatedHistory = currentHistoryStr ? JSON.parse(currentHistoryStr) : [];
+      } catch (e) {
+        updatedHistory = [];
+      }
+
+      const turnItem = {
+        question: content,
+        answer: answerText,
+        visualizations: visData,
+        follow_up_questions: followUps,
+        created_at: new Date().toISOString()
+      };
+
       if (isDefaultChat || !currentVisitNumber) {
         // Update localStorage with the new session's data so the UI
         // (header + sidebar) reflects the newly created query session
         // instead of staying stuck on the old default or a blank unselected state.
-        const newSessionHistory = [{
-          question: content,
-          answer: answerText,
-          visualizations: visData,
-          follow_up_questions: followUps
-        }];
-        localStorage.setItem('selected_query_session', JSON.stringify(newSessionHistory));
+        updatedHistory = [turnItem];
         localStorage.setItem('selected_query_session_name', response?.query_session_name || content);
 
         if (onNewSessionCreated) {
@@ -164,7 +181,10 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
             onNewSessionCreated();
           }, 500); // short delay to ensure DB transaction completes
         }
+      } else {
+        updatedHistory.push(turnItem);
       }
+      localStorage.setItem('selected_query_session', JSON.stringify(updatedHistory));
     } catch (error: any) {
       console.error('Session Chat Error:', error);
       

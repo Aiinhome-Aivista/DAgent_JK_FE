@@ -70,7 +70,8 @@ export const API_ENDPOINTS = {
     CATEGORY_SALES: '/category-sales',
     DOMESTIC_SALES_VALUE_ACHIEVEMENT: '/domestic-sales-value-achievement',
     SALES_REPORT_BY_VALUES: '/sales-report-by-values',
-    SALES_NUMBERS_REPORT: '/sales-numbers-report'
+    SALES_NUMBERS_REPORT: '/sales-numbers-report',
+    SALES_SUMMARY_NO_VALUES: '/sales-summary-no-values'
 
   },
 
