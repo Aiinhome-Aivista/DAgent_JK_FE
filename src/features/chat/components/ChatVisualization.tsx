@@ -720,7 +720,7 @@ const ChartVisualizationInner = React.memo(({ visualization }: ChatVisualization
 
 
 
-        <div className="overflow-x-auto max-h-64 custom-scrollbar">
+        <div className="overflow-x-auto max-h-64 custom-scrollbar custom-h-scrollbar">
 
 
 
