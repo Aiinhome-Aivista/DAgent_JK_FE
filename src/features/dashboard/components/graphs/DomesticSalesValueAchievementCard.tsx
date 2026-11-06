@@ -644,7 +644,7 @@ export const DomesticSalesValueAchievementCard = () => {
                         {fmtCell(row.total)}
                       </td>
                       <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold">
-                        {row.target > 0 && row.achievement_pct !== undefined ? `${Math.round(row.achievement_pct)}%` : "%"}
+                        {row.target > 0 && row.achievement_pct !== undefined ? `${Math.round(row.achievement_pct)}%` : ""}
                       </td>
                       <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
                         {fmtCell(row.today)}
@@ -686,7 +686,7 @@ export const DomesticSalesValueAchievementCard = () => {
                         {fmtCell(row.domestic_actual)}
                       </td>
                       <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold">
-                        {row.domestic_target > 0 && row.domestic_achv_pct !== undefined ? `${Math.round(row.domestic_achv_pct)}%` : "%"}
+                        {row.domestic_target > 0 && row.domestic_achv_pct !== undefined ? `${Math.round(row.domestic_achv_pct)}%` : ""}
                       </td>
                     </tr>
                   );
