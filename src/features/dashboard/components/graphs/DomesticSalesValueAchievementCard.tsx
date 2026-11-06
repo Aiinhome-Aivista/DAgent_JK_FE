@@ -44,6 +44,29 @@ interface SalesReportByValuesRow {
   is_total?: boolean;
 }
 
+interface SalesNumbersRow {
+  category: string;
+  prev_year_act: number;
+  target: number;
+  total: number;
+  achievement_pct: number;
+  today: number;
+  dealer: number;
+  distributor: number;
+  fleet: number;
+  others: number;
+  oem_target: number;
+  oem_actual: number;
+  stu_target: number;
+  stu_actual: number;
+  def_target: number;
+  def_actual: number;
+  domestic_target: number;
+  domestic_actual: number;
+  domestic_achv_pct: number;
+  is_total?: boolean;
+}
+
 interface MetaInfo {
   month_abbr: string;
   prev_year_label: string;
@@ -79,6 +102,14 @@ const fmtNum = (v: number | undefined | null) => {
   });
 };
 
+const fmtCell = (v: number | undefined | null) => {
+  if (v === undefined || v === null || Number(v) === 0) return "";
+  return Number(v).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 export const DomesticSalesValueAchievementCard = () => {
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const activeTab = TABS[activeTabIndex].id;
@@ -94,6 +125,10 @@ export const DomesticSalesValueAchievementCard = () => {
     day_label: "Sale for day",
   });
   const [isSheet1Loading, setIsSheet1Loading] = useState<boolean>(true);
+
+  // Dedicated Sheet 2 state (Sales Number's)
+  const [sheet2Data, setSheet2Data] = useState<SalesNumbersRow[]>([]);
+  const [isSheet2Loading, setIsSheet2Loading] = useState<boolean>(false);
 
   // Dedicated Sheet 3 state (Sales Report by Values)
   const [sheet3Data, setSheet3Data] = useState<SalesReportByValuesRow[]>([]);
@@ -144,6 +179,46 @@ export const DomesticSalesValueAchievementCard = () => {
       setSheet1Data([]);
     } finally {
       setIsSheet1Loading(false);
+    }
+  };
+
+  // Fetch dedicated Sheet 2 data (Sales Number's)
+  const fetchSheet2Data = async (monthOverride?: number) => {
+    setIsSheet2Loading(true);
+    try {
+      if (!sessionId || sessionId === "null") {
+        setIsSheet2Loading(false);
+        return;
+      }
+
+      const activeMo = monthOverride !== undefined ? monthOverride : selectedMonthNo;
+      let url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_NUMBERS_REPORT}?session_id=${sessionId}`;
+      if (activeMo) {
+        url += `&month=${encodeURIComponent(activeMo)}`;
+      }
+
+      const response = await queuedFetch(url);
+      const json = await response.json();
+
+      if (json.status === "success" && json.data) {
+        setSheet2Data(json.data);
+        if (json.months && Array.isArray(json.months)) {
+          setMonths(json.months);
+        }
+        if (json.selected_month) {
+          setSelectedMonthNo(json.selected_month);
+        }
+        if (json.meta) {
+          setMeta(json.meta);
+        }
+      } else {
+        setSheet2Data([]);
+      }
+    } catch (e) {
+      console.error("Error fetching sales numbers report", e);
+      setSheet2Data([]);
+    } finally {
+      setIsSheet2Loading(false);
     }
   };
 
@@ -214,6 +289,8 @@ export const DomesticSalesValueAchievementCard = () => {
   useEffect(() => {
     if (activeTabIndex === 0) {
       fetchSheet1Data();
+    } else if (activeTabIndex === 1) {
+      fetchSheet2Data();
     } else if (activeTabIndex === 2) {
       fetchSheet3Data();
     } else {
@@ -227,6 +304,8 @@ export const DomesticSalesValueAchievementCard = () => {
       setSelectedMonthNo(mo);
       if (activeTabIndex === 0) {
         fetchSheet1Data(mo);
+      } else if (activeTabIndex === 1) {
+        fetchSheet2Data(mo);
       } else if (activeTabIndex === 2) {
         fetchSheet3Data(mo);
       }
@@ -241,7 +320,12 @@ export const DomesticSalesValueAchievementCard = () => {
       const now = new Date();
       await apiService.download(
         API_ENDPOINTS.REPORTS.EXPORT_DOMESTIC_SALES,
-        { session_id: sessionId, month: selectedMonthNo },
+        {
+          session_id: sessionId,
+          month: selectedMonthNo,
+          year: now.getFullYear(),
+          day: now.getDate(),
+        },
         `Summary_Revised_${now.getFullYear()}_${selectedMonthNo}_${now.getDate()}.xlsx`
       );
       toast.success("Downloaded!", { id: toastId });
@@ -298,8 +382,8 @@ export const DomesticSalesValueAchievementCard = () => {
 
         {/* Right Action Toolbar: Month Selector + Download */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Month Selector Dropdown for Sheet 1 & Sheet 3 */}
-          {(activeTabIndex === 0 || activeTabIndex === 2) && (
+          {/* Month Selector Dropdown for Sheet 1, Sheet 2 & Sheet 3 */}
+          {(activeTabIndex === 0 || activeTabIndex === 1 || activeTabIndex === 2) && (
             <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-indigo-300 transition-all">
               <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
               <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -308,7 +392,7 @@ export const DomesticSalesValueAchievementCard = () => {
               <select
                 value={selectedMonthNo}
                 onChange={handleMonthChange}
-                disabled={activeTabIndex === 0 ? isSheet1Loading : isSheet3Loading}
+                disabled={activeTabIndex === 0 ? isSheet1Loading : activeTabIndex === 1 ? isSheet2Loading : isSheet3Loading}
                 className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
               >
                 {months.map((m) => (
@@ -323,7 +407,7 @@ export const DomesticSalesValueAchievementCard = () => {
           {/* Download Full Excel Button */}
           <button
             onClick={handleDownload}
-            disabled={isDownloading || isSheet1Loading}
+            disabled={isDownloading || (activeTabIndex === 0 ? isSheet1Loading : activeTabIndex === 1 ? isSheet2Loading : activeTabIndex === 2 ? isSheet3Loading : isPreviewLoading)}
             title="Download Full Report as Excel"
             className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 disabled:opacity-50 text-indigo-600 transition-colors focus:outline-none cursor-pointer"
           >
@@ -442,6 +526,176 @@ export const DomesticSalesValueAchievementCard = () => {
           ) : (
             <div className="flex items-center justify-center min-h-[180px] text-slate-400 text-sm">
               No sales summary data available for this month.
+            </div>
+          )
+        ) : activeTabIndex === 1 ? (
+          /* ================= SHEET 2: Sales Number's ================= */
+          isSheet2Loading ? (
+            <div className="flex flex-col items-center justify-center min-h-[200px]">
+              <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+              <span className="text-xs text-slate-500 mt-2 font-medium">Calculating sales numbers by category...</span>
+            </div>
+          ) : sheet2Data.length > 0 ? (
+            <table className="w-full text-xs border-collapse min-w-[1250px] bg-white">
+              <thead>
+                {/* Banner Header Title Row */}
+                <tr>
+                  <th
+                    colSpan={19}
+                    className="bg-[#dcfcfc] text-[#006666] font-bold text-center text-xs py-2 border border-slate-300 uppercase tracking-wide"
+                  >
+                    Sales Number's
+                  </th>
+                </tr>
+
+                {/* Sub-header Tier 1 */}
+                <tr className="text-slate-800 text-[11px]">
+                  <th
+                    rowSpan={2}
+                    className="border border-slate-300 px-3 py-2 font-bold text-center align-middle w-40 bg-white"
+                  >
+                    Category
+                  </th>
+                  <th
+                    colSpan={9}
+                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#ffff99] text-slate-900"
+                  >
+                    Replacement
+                  </th>
+                  <th
+                    colSpan={2}
+                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#fce4d6] text-slate-900"
+                  >
+                    OEM
+                  </th>
+                  <th
+                    colSpan={2}
+                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#ddebf7] text-slate-900"
+                  >
+                    STU
+                  </th>
+                  <th
+                    colSpan={2}
+                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#fff0f5] text-slate-900"
+                  >
+                    DEF
+                  </th>
+                  <th
+                    colSpan={3}
+                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#f2f2f2] text-slate-900"
+                  >
+                    Domestic
+                  </th>
+                </tr>
+
+                {/* Sub-header Tier 2 */}
+                <tr className="bg-[#f8fafc] text-slate-800 text-[11px]">
+                  {/* Replacement cols */}
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center whitespace-nowrap">{meta.prev_year_label}</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Total</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">% Achv</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Today</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Dealer</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Dist.</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Fleet</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Others</th>
+
+                  {/* OEM cols */}
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Actual</th>
+
+                  {/* STU cols */}
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Actual</th>
+
+                  {/* DEF cols */}
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Actual</th>
+
+                  {/* Domestic cols */}
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Actual</th>
+                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">% Achv.</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {sheet2Data.map((row, idx) => {
+                  const isTotal = row.is_total || row.category.trim().toLowerCase() === "total";
+                  const rowBg = isTotal
+                    ? "bg-[#fff59d] font-bold text-slate-900"
+                    : idx % 2 === 0
+                    ? "bg-white hover:bg-slate-50/80"
+                    : "bg-slate-50/50 hover:bg-slate-50";
+
+                  return (
+                    <tr key={idx} className={`${rowBg} transition-colors text-slate-700`}>
+                      <td className="border border-slate-300 px-3 py-1.5 text-left font-medium whitespace-nowrap">
+                        {row.category}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.prev_year_act)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.target)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono font-semibold">
+                        {fmtCell(row.total)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold">
+                        {row.target > 0 && row.achievement_pct !== undefined ? `${Math.round(row.achievement_pct)}%` : "%"}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.today)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.dealer)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.distributor)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.fleet)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.others)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.oem_target)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.oem_actual)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.stu_target)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.stu_actual)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.def_target)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.def_actual)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
+                        {fmtCell(row.domestic_target)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono font-semibold">
+                        {fmtCell(row.domestic_actual)}
+                      </td>
+                      <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold">
+                        {row.domestic_target > 0 && row.domestic_achv_pct !== undefined ? `${Math.round(row.domestic_achv_pct)}%` : "%"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div className="flex items-center justify-center min-h-[180px] text-slate-400 text-sm">
+              No sales numbers data available for this month.
             </div>
           )
         ) : activeTabIndex === 2 ? (
