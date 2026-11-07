@@ -724,7 +724,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                               .sort((a, b) => {
                                                 if (a === defaultToKeep) return -1;
                                                 if (b === defaultToKeep) return 1;
-                                                return 0;
+
+                                                const getVisitNum = (s: any) => {
+                                                  const m = String(s.querySessionId || "").match(/(\d+)/);
+                                                  return m ? parseInt(m[1], 10) : 0;
+                                                };
+                                                const vA = getVisitNum(a);
+                                                const vB = getVisitNum(b);
+                                                if (vA && vB && vA !== vB) return vB - vA;
+
+                                                const getTimestamp = (s: any) => {
+                                                  const h = s.querySessionHistory;
+                                                  const dt = s.createdAt || (h && h.length > 0 && (h[h.length - 1]?.created_at || h[0]?.created_at));
+                                                  return dt ? new Date(dt).getTime() : 0;
+                                                };
+                                                const tA = getTimestamp(a);
+                                                const tB = getTimestamp(b);
+                                                if (tA && tB && tA !== tB) return tB - tA;
+
+                                                return rawSessions.indexOf(b) - rawSessions.indexOf(a);
                                               });
 
                                             return filteredSessions.length ===
