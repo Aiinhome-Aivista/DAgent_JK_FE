@@ -24,7 +24,7 @@ export interface ChatHistoryResponse {
 }
 
 export interface IChatHistoryService {
-  getSessionChatHistory(sessionId: string, userId: number): Promise<ChatHistoryResponse>;
+  getSessionChatHistory(sessionId: string, userId?: number): Promise<ChatHistoryResponse>;
   saveSessionChatHistory(data: any): Promise<any>;
 }
 
@@ -35,8 +35,9 @@ class ChatHistoryService implements IChatHistoryService {
     this.api = api;
   }
 
-  async getSessionChatHistory(sessionId: string, userId: number): Promise<ChatHistoryResponse> {
-    return this.api.get(`${API_ENDPOINTS.COMMON.SESSION_CHAT_HISTORY}?session_id=${sessionId}&user_id=${userId}`);
+  async getSessionChatHistory(sessionId: string, userId?: number): Promise<ChatHistoryResponse> {
+    const effectiveUserId = userId ?? Number(localStorage.getItem('DAgent_user_id')) ?? 6;
+    return this.api.get(`${API_ENDPOINTS.COMMON.SESSION_CHAT_HISTORY}?session_id=${sessionId}&user_id=${effectiveUserId}`);
   }
 
   async saveSessionChatHistory(data: any): Promise<any> {

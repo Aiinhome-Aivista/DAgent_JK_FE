@@ -107,8 +107,15 @@ const parseSessionData = (session: any) => {
 
     const sessionName = session.querySessionName || "";
 
-    // Find the first turn with an assistant answer
-    const relevantTurn = [...history].reverse().find((turn: any) => turn.answer);
+    // For the executive summary card, find the initial summary turn
+    // (turn 0, or turn with question starting with 'default', or containing 'Executive Summary')
+    const summaryTurn = history.find((turn: any) =>
+      (typeof turn?.question === "string" && turn.question.trim().toLowerCase().startsWith("default")) ||
+      (typeof turn?.answer === "string" && /executive\s+summary/i.test(turn.answer))
+    );
+
+    // If no explicit summary turn found, prioritize initial turn history[0], never the latest chat turn
+    const relevantTurn = summaryTurn || (history[0]?.answer ? history[0] : history.find((turn: any) => turn.answer));
     if (!relevantTurn || !relevantTurn.answer) {
       return null;
     }
@@ -368,9 +375,10 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
         // If not in localStorage, fetch the real default summary session from backend
         if (!storedSession || storedSession === "[]") {
           const sId = localStorage.getItem("DAgent_session_id") || "42d4f4e5-e66d-4c2a-9ad4-ea637e90fc91";
-          const queryResponse = await chatHistoryService.getSessionChatHistory(sId);
-          if (queryResponse && queryResponse.status === "success" && queryResponse.sessions) {
-            const sessions = queryResponse.sessions;
+          const uId = Number(localStorage.getItem("DAgent_user_id")) || 6;
+          const queryResponse = await chatHistoryService.getSessionChatHistory(sId, uId);
+          if (queryResponse && queryResponse.status === "success") {
+            const sessions = (queryResponse as any).querySessions || (queryResponse as any).sessions || [];
             let defaultSession = null;
             for (let i = sessions.length - 1; i >= 0; i--) {
               if (sessions[i].querySessionName?.trim().toLowerCase().startsWith("default")) {
@@ -382,7 +390,7 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
               storedSession = JSON.stringify(defaultSession.querySessionHistory);
               localStorage.setItem("default_workspace_analysis", storedSession);
               const hist = defaultSession.querySessionHistory;
-              const createdAt = hist[hist.length - 1]?.created_at || hist[0]?.created_at || (defaultSession as any).createdAt;
+              const createdAt = hist[0]?.created_at || (defaultSession as any).createdAt;
               if (createdAt) localStorage.setItem("default_workspace_analysis_time", createdAt);
             }
           }

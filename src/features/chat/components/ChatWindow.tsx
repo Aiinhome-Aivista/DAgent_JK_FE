@@ -84,6 +84,17 @@ export const ChatWindow = ({
   }, [messages]);
 
   useEffect(() => {
+    if (!isCollapsed) {
+      const timer = setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isCollapsed, scrollRef]);
+
+  useEffect(() => {
     if (mode === "landing") {
       setIsLoadingConnectors(true);
       // TODO: Fetch connected data sources from the backend
