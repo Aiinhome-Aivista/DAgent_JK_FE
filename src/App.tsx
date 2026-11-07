@@ -135,13 +135,18 @@ function AppContent() {
                     window.dispatchEvent(new Event('default-workspace-updated'));
                   }
 
-                  // Restore missing session data if we have a current_visit_number but no actual data
-                  if (currentVisit && !hasSelectedSession) {
+                  // Restore or refresh active session data if we have a current_visit_number
+                  if (currentVisit) {
                     const targetSession = sessions.find((s: any) => s.querySessionId === `session_visit_${currentVisit}`);
                     if (targetSession && targetSession.querySessionHistory) {
                       localStorage.setItem('selected_query_session', JSON.stringify(targetSession.querySessionHistory));
                       if (targetSession.querySessionName) {
                         localStorage.setItem('selected_query_session_name', targetSession.querySessionName);
+                      }
+                      if (targetSession.querySessionName?.trim().toLowerCase().startsWith('default')) {
+                        localStorage.setItem('is_default_chat', 'true');
+                      } else {
+                        localStorage.removeItem('is_default_chat');
                       }
                       setChatKey(prev => prev + 1);
                     }
@@ -251,10 +256,6 @@ function AppContent() {
 
   useEffect(() => {
     if (userId || viewMode === 'app') {
-      // Force default chat session selection on reload by clearing current selections
-      localStorage.removeItem('current_visit_number');
-      localStorage.removeItem('selected_query_session');
-      localStorage.removeItem('selected_query_session_name');
 
       fetchWorkspaces(true);
     }

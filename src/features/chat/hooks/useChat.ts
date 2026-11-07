@@ -206,6 +206,10 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
   const fetchChatHistory = useCallback(async () => {
     try {
       const storedSession = localStorage.getItem('selected_query_session');
+      const storedSessionName = localStorage.getItem('selected_query_session_name') || '';
+      const isDefault = localStorage.getItem('is_default_chat') === 'true' ||
+                        storedSessionName.trim().toLowerCase().startsWith('default');
+
       if (storedSession) {
         const querySessionHistory = JSON.parse(storedSession);
 
@@ -213,14 +217,71 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
         querySessionHistory.forEach((item: any, idx: number) => {
           const isSystemQuestion = item.question.startsWith('default_') || item.question === 'Updated Analysis from newly uploaded files' || item.question === 'Context Update';
 
-          if (!isSystemQuestion) {
-            historyMessages.push({
-              id: `user-${idx}`,
-              role: 'user',
-              content: item.question,
-              timestamp: item.timestamp ? new Date(item.timestamp) : (item.created_at ? new Date(item.created_at) : new Date())
-            });
+          if (isDefault) {
+            // In default chat view, only show the initial workspace analysis report (turn 0),
+            // never subsequent conversational queries
+            if (isSystemQuestion) {
+              let assistantContent = item.answer;
+              try {
+                const parsed = JSON.parse(item.answer);
+                if (parsed && typeof parsed === 'object') {
+                  const extracted = parsed.report || parsed.description || parsed.report_content;
+                  if (extracted) {
+                    assistantContent = typeof extracted === 'string' ? extracted : JSON.stringify(extracted);
+                  }
+                }
+              } catch (e) {
+                // Not JSON, use as is
+              }
+
+              let visData = item.visualizations || [];
+              visData = visData.map((viz: any) => {
+                if (viz.chart_type && viz.labels && viz.datasets) {
+                  const rechartsData = viz.labels.map((label: string, index: number) => {
+                    const dataPoint: any = { label };
+                    viz.datasets.forEach((dataset: any) => {
+                      dataPoint[dataset.label] = dataset.data[index];
+                    });
+                    return dataPoint;
+                  });
+                  
+                  let rechartsType = 'bar_chart';
+                  if (viz.chart_type === 'pie') rechartsType = 'pie_chart';
+                  if (viz.chart_type === 'line') rechartsType = 'line_chart';
+                  
+                  return {
+                    type: rechartsType,
+                    title: viz.title || '',
+                    data: rechartsData,
+                    xKey: 'label',
+                    yKey: viz.datasets[0]?.label || 'value'
+                  };
+                }
+                return viz;
+              });
+
+              historyMessages.push({
+                id: `assistant-${idx}`,
+                role: 'assistant',
+                content: assistantContent,
+                timestamp: item.timestamp ? new Date(item.timestamp) : (item.created_at ? new Date(item.created_at) : new Date()),
+                visualizations: visData
+              });
+            }
+            return;
           }
+
+          // In regular chat sessions, skip the system summary report
+          if (isSystemQuestion) {
+            return;
+          }
+
+          historyMessages.push({
+            id: `user-${idx}`,
+            role: 'user',
+            content: item.question,
+            timestamp: item.timestamp ? new Date(item.timestamp) : (item.created_at ? new Date(item.created_at) : new Date())
+          });
 
           let assistantContent = item.answer;
           try {
