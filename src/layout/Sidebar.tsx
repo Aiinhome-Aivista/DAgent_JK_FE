@@ -71,6 +71,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { userId, roleId, roleName } = useAuthContext();
   const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+  const [activeSessionName, setActiveSessionName] = React.useState<string | null>(() => localStorage.getItem("selected_query_session_name"));
+  const [activeVisitNumber, setActiveVisitNumber] = React.useState<string | null>(() => localStorage.getItem("current_visit_number"));
+
+  React.useEffect(() => {
+    setActiveSessionName(localStorage.getItem("selected_query_session_name"));
+    setActiveVisitNumber(localStorage.getItem("current_visit_number"));
+  }, [chatKey, queryHistories]);
+
+  React.useEffect(() => {
+    const handleUpdate = () => {
+      setActiveSessionName(localStorage.getItem("selected_query_session_name"));
+      setActiveVisitNumber(localStorage.getItem("current_visit_number"));
+    };
+    window.addEventListener("default-workspace-updated", handleUpdate);
+    window.addEventListener("session-id-updated", handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+    return () => {
+      window.removeEventListener("default-workspace-updated", handleUpdate);
+      window.removeEventListener("session-id-updated", handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+    };
+  }, []);
 
   const [sidebarWidth, setSidebarWidth] = React.useState(280);
   const isResizing = React.useRef(false);
@@ -714,7 +736,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                               </div>
                                             ) : (
                                               filteredSessions.map(
-                                                (session, idx) => (
+                                                 (session, idx) => {
+                                                   const isSelected = workspace.id === selectedWorkspace?.id && (
+                                                     (activeSessionName ? session.querySessionName === activeSessionName : (activeVisitNumber && session.querySessionId && activeVisitNumber === String(session.querySessionId).replace("session_visit_", "").trim()))
+                                                   );
+                                                   return (
                                                   <div
                                                     key={
                                                       session.querySessionId ||
@@ -769,29 +795,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                           prev + 1,
                                                       );
                                                     }}
-                                                    className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer group flex items-center justify-between gap-2 ${workspace.id === selectedWorkspace?.id && session.querySessionId &&
-                                                      localStorage.getItem("current_visit_number") ===
-                                                      String(session.querySessionId).replace("session_visit_", "").trim()
-                                                      ? "border-[var(--accent)]/30 bg-[var(--accent)]/10 shadow-sm"
-                                                      : "border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)]"
-                                                      }`}
+                                                     className={`w-full text-left p-2.5 rounded-xl border transition-all cursor-pointer group flex items-center justify-between gap-2 ${
+                                                       isSelected
+                                                       ? "border-[var(--accent)]/30 bg-[var(--accent)]/10 shadow-sm"
+                                                       : "border-[var(--border)] bg-[var(--bg)]/50 hover:bg-[var(--surface-hover)]"
+                                                       }`}
                                                   >
                                                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                                                       <MessageSquare
-                                                        className={`w-4 h-4 shrink-0 transition-colors ${workspace.id === selectedWorkspace?.id && session.querySessionId &&
-                                                          localStorage.getItem("current_visit_number") ===
-                                                          String(session.querySessionId).replace("session_visit_", "").trim()
-                                                          ? "text-[var(--accent)]"
-                                                          : "text-[var(--text-secondary)] group-hover:text-[var(--accent)]"
-                                                          }`}
+                                                         className={`w-4 h-4 shrink-0 transition-colors ${
+                                                           isSelected
+                                                           ? "text-[var(--accent)]"
+                                                           : "text-[var(--text-secondary)] group-hover:text-[var(--accent)]"
+                                                           }`}
                                                       />
                                                       <div
-                                                        className={`text-[11px] font-semibold truncate transition-colors ${workspace.id === selectedWorkspace?.id && session.querySessionId &&
-                                                          localStorage.getItem("current_visit_number") ===
-                                                          String(session.querySessionId).replace("session_visit_", "").trim()
-                                                          ? "text-[var(--text-primary)]"
-                                                          : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
-                                                          }`}
+                                                         className={`text-[11px] font-semibold truncate transition-colors ${
+                                                           isSelected
+                                                           ? "text-[var(--text-primary)]"
+                                                           : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"
+                                                           }`}
                                                       >
                                                         {session.querySessionName}
                                                       </div>
@@ -802,8 +825,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                       </div>
                                                     )}
                                                   </div>
-                                                ),
-                                              )
+                                                );
+                                              })
                                             );
                                           })()
                                         )}
