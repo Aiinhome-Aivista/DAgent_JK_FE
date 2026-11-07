@@ -172,8 +172,10 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
         // Update localStorage with the new session's data so the UI
         // (header + sidebar) reflects the newly created query session
         // instead of staying stuck on the old default or a blank unselected state.
+        localStorage.removeItem('is_default_chat');
         updatedHistory = [turnItem];
         localStorage.setItem('selected_query_session_name', response?.query_session_name || content);
+        window.dispatchEvent(new Event('storage'));
 
         if (onNewSessionCreated) {
           // Trigger sidebar refresh so the new chat shows up and gets selected

@@ -967,14 +967,25 @@ export const DomesticSalesValueAchievementCard = () => {
                     colSpan={3}
                     className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#f1f5f9] text-slate-800"
                   >
-                    Values ( In Crores )
+                    Sales Values in( In Crores )
                   </th>
-                  <th
-                    colSpan={17}
-                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#f1f5f9] text-slate-800"
-                  >
-                    Tyre Numbers / Quantities
-                  </th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">TBB Total</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">TBR Total</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">LCV Bias</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">LCV Rdl</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">SCV Bias</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">SCV Rdl</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Car Bias</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Car Radial</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Jeep Bias</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Jeep Radial</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Tr. Fro</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Tr. Rear</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Trail</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">ADV</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">3 Whlrs</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Scooter</th>
+                  <th rowSpan={2} className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Motor</th>
                 </tr>
 
                 {/* Sub-header Tier 2 (Columns) */}
@@ -983,25 +994,6 @@ export const DomesticSalesValueAchievementCard = () => {
                   <th className="border border-slate-300 px-2 py-1 font-bold text-center whitespace-nowrap">4 Whlrs.</th>
                   <th className="border border-slate-300 px-2 py-1 font-bold text-center whitespace-nowrap">2/3 Whlrs</th>
                   <th className="border border-slate-300 px-2 py-1 font-bold text-center whitespace-nowrap font-semibold text-slate-900 bg-slate-100">Total</th>
-
-                  {/* Quantities */}
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">TBB Total</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">TBR Total</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">LCV Bias</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">LCV Rdl</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">SCV Bias</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">SCV Rdl.</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Car Bias</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Car Radial</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Jeep Bias</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Jeep Radial</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Tr. Fro</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Tr. Rear</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Trail</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">ADV</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">3 Whlrs</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Scooter</th>
-                  <th className="border border-slate-300 px-2 py-1 font-semibold text-center whitespace-nowrap">Motor</th>
                 </tr>
               </thead>
 
@@ -1010,6 +1002,19 @@ export const DomesticSalesValueAchievementCard = () => {
                   const isTotal = row.is_total || row.zone.trim().toLowerCase() === "total" || row.zone.trim().toLowerCase() === "grand total";
                   const isTarget = row.row_type === "Target";
                   const isAchv = row.row_type === "Achv %";
+
+                  // Group rows by zone so the Zone cell is merged vertically across Actual, Target, Achv %
+                  const isFirstOfZone = idx === 0 || sheet4Data[idx - 1].zone !== row.zone;
+                  let zoneSpan = 1;
+                  if (isFirstOfZone) {
+                    for (let i = idx + 1; i < sheet4Data.length; i++) {
+                      if (sheet4Data[i].zone === row.zone) {
+                        zoneSpan++;
+                      } else {
+                        break;
+                      }
+                    }
+                  }
 
                   let rowBg = "bg-white hover:bg-slate-50/80 text-slate-800";
                   if (isTotal) {
@@ -1034,9 +1039,16 @@ export const DomesticSalesValueAchievementCard = () => {
 
                   return (
                     <tr key={idx} className={`${rowBg} transition-colors border-b border-slate-200`}>
-                      <td className="border border-slate-300 px-3 py-1.5 text-left font-medium whitespace-nowrap">
-                        {row.zone}
-                      </td>
+                      {isFirstOfZone && (
+                        <td
+                          rowSpan={zoneSpan}
+                          className={`border border-slate-300 px-3 py-1.5 text-center font-bold align-middle whitespace-nowrap ${
+                            isTotal ? "bg-[#fef08a] text-slate-900" : "bg-white text-slate-900"
+                          }`}
+                        >
+                          {row.zone}
+                        </td>
+                      )}
                       <td className={`border border-slate-300 px-2 py-1.5 text-center font-semibold whitespace-nowrap ${
                         isTarget ? "text-emerald-700" : isAchv ? "text-indigo-600" : "text-slate-800"
                       }`}>
