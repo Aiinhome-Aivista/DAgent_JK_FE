@@ -85,13 +85,17 @@ export const useChat = (initialMode: ChatMode = 'landing', initialMessage?: stri
         });
       };
 
+      const isDefault = isDefaultChat || currentVisitNumber === '1' || localStorage.getItem('is_default_chat') === 'true';
+
       const response: any = await connectorService.sendSessionChat(
         {
           session_id: chatSessionId,
           question: content,
           user_id: userId,
-          ...(currentVisitNumber ? { visit_number: parseInt(currentVisitNumber, 10) } : { is_new_query: true }),
-          ...(currentChatId ? { chat_id: currentChatId } : {})
+          ...((!isDefault && currentVisitNumber)
+            ? { visit_number: parseInt(currentVisitNumber, 10) }
+            : { is_new_query: true }),
+          ...((!isDefault && currentChatId) ? { chat_id: currentChatId } : {})
         },
         handleStatus
       );
