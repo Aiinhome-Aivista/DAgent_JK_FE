@@ -45,9 +45,6 @@ export const QueryViewGeneric: React.FC<QueryViewGenericProps> = ({
     if (!isNewVisit) {
       try {
         let storedSession = localStorage.getItem('default_workspace_analysis');
-        if (!storedSession || storedSession === '[]') {
-          storedSession = localStorage.getItem('selected_query_session');
-        }
 
         if (storedSession) {
           const parsed = JSON.parse(storedSession);

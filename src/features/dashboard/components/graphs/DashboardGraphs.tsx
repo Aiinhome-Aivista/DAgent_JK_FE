@@ -360,15 +360,35 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
 
   useEffect(() => {
     let active = true;
-    const fetchDefaultSession = () => {
+    const fetchDefaultSession = async () => {
       setLoading(true);
       try {
         let storedSession = localStorage.getItem("default_workspace_analysis");
+
+        // If not in localStorage, fetch the real default summary session from backend
         if (!storedSession || storedSession === "[]") {
-          storedSession = localStorage.getItem("selected_query_session");
+          const sId = localStorage.getItem("DAgent_session_id") || "42d4f4e5-e66d-4c2a-9ad4-ea637e90fc91";
+          const queryResponse = await chatHistoryService.getSessionChatHistory(sId);
+          if (queryResponse && queryResponse.status === "success" && queryResponse.sessions) {
+            const sessions = queryResponse.sessions;
+            let defaultSession = null;
+            for (let i = sessions.length - 1; i >= 0; i--) {
+              if (sessions[i].querySessionName?.trim().toLowerCase().startsWith("default")) {
+                defaultSession = sessions[i];
+                break;
+              }
+            }
+            if (defaultSession && defaultSession.querySessionHistory) {
+              storedSession = JSON.stringify(defaultSession.querySessionHistory);
+              localStorage.setItem("default_workspace_analysis", storedSession);
+              const hist = defaultSession.querySessionHistory;
+              const createdAt = hist[hist.length - 1]?.created_at || hist[0]?.created_at || (defaultSession as any).createdAt;
+              if (createdAt) localStorage.setItem("default_workspace_analysis_time", createdAt);
+            }
+          }
         }
 
-        if (storedSession) {
+        if (storedSession && storedSession !== "[]") {
           const parsedSession = JSON.parse(storedSession);
           if (Array.isArray(parsedSession) && parsedSession.length > 0) {
             const defaultSession = {
@@ -384,7 +404,7 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
           if (active) setParsedData(null);
         }
       } catch (err) {
-        console.error("Failed to load selected query session from local storage:", err);
+        console.error("Failed to load default workspace analysis:", err);
         if (active) setParsedData(null);
       } finally {
         if (active) setLoading(false);
@@ -398,13 +418,11 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
     };
 
     window.addEventListener("session-id-updated", handleSessionUpdate);
-    window.addEventListener("storage", handleSessionUpdate);
     window.addEventListener("default-workspace-updated", handleSessionUpdate);
 
     return () => {
       active = false;
       window.removeEventListener("session-id-updated", handleSessionUpdate);
-      window.removeEventListener("storage", handleSessionUpdate);
       window.removeEventListener("default-workspace-updated", handleSessionUpdate);
     };
   }, []);
