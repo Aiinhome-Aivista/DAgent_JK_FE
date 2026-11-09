@@ -165,7 +165,7 @@ export const SchedulerConfigCard = () => {
           {/* Schedule Time */}
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
-              Daily Scheduled Time
+              Scheduled Start Time
             </label>
             <input
               type="time"
@@ -173,7 +173,9 @@ export const SchedulerConfigCard = () => {
               onChange={(e) => setScheduleTime(e.target.value)}
               className="px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg)] text-sm font-mono text-[var(--text-primary)] focus:border-[var(--accent)] outline-none"
             />
-
+            <span className="text-[11px] text-[var(--text-secondary)]">
+              e.g. Set 11:45 to run at 11:45 AM, 1:45 PM, 3:45 PM...
+            </span>
           </div>
 
           {/* Frequency */}
@@ -186,13 +188,16 @@ export const SchedulerConfigCard = () => {
               onChange={(e) => setFrequency(e.target.value)}
               className="px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg)] text-sm text-[var(--text-primary)] focus:border-[var(--accent)] outline-none cursor-pointer"
             >
+              <option value="every_2_hours">Every 2 Hours (Starting at Scheduled Time)</option>
+              <option value="hourly">Hourly (Every 60 Minutes)</option>
               <option value="daily">Once a day (At Scheduled Time)</option>
               <option value="twice_daily">Twice a day (Every 12 Hours)</option>
               <option value="thrice_daily">3 times a day (Every 8 Hours)</option>
-              <option value="hourly">Hourly (Every 60 Minutes)</option>
             </select>
             <span className="text-[11px] text-[var(--text-secondary)]">
-              Controls how many times calculations run in background.
+              {frequency === "every_2_hours" 
+                ? `Runs every 2 hours starting at ${scheduleTime || "11:45"}`
+                : "Controls how many times calculations run in background."}
             </span>
           </div>
 

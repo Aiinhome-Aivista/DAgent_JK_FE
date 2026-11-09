@@ -52,6 +52,7 @@ export const API_ENDPOINTS = {
   },
 
   DASHBOARD: {
+    TOP_BOTTOM_PERFORMANCE: '/top-bottom-performance',
     TYRE_SALES_DATA: '/tyre-sales-data',
     SALES_BY_ZONE: '/sales-by-zone',
     FILTERS: '/dashboard-filters/',

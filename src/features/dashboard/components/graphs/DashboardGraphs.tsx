@@ -23,6 +23,7 @@ import { formatChatMessage, filterOutOntologyAndConclusion } from "../../../../u
 import { YearComparisonChartDynamic } from "./YearComparisonChartDynamic";
 import { ZonePieChartDynamic } from "./ZonePieChartDynamic";
 import { TyreSalesChartDynamic } from "./TyreSalesChartDynamic";
+import { TopBottomPerformanceChart } from "./TopBottomPerformanceChart";
 import { YoYGrowthGraph } from "./YoYGrowthGraph";
 import { IndiaMapGraph } from "./IndiaCoverageMap";
 import { PlanVsSaleChartDynamic } from "./PlanVsSaleChartDynamic";
@@ -826,6 +827,9 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
 
       <ZonePieChartDynamic zone={selectedZone} />
       <TyreSalesChartDynamic zone={selectedZone} />
+
+      {/* 4b. Top 10 & Bottom 10 Sales Performance (Side-by-side Top 10 and Bottom 10) */}
+      <TopBottomPerformanceChart />
 
 
       {/* 5. Category Sales & Actual Sales by Account Category */}
