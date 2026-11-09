@@ -75,9 +75,15 @@ const getRelativeTimeString = (dateStr?: string | null): string => {
   if (!dateStr) return "";
   try {
     let normalized = dateStr.trim();
+    // Normalize space to T
+    normalized = normalized.replace(" ", "T");
+    // If backend returns UTC timestamp without 'Z', append 'Z' so browser parses it as UTC
+    if (!normalized.endsWith("Z") && !/[+-]\d{2}(:\d{2})?$/.test(normalized)) {
+      normalized = normalized + "Z";
+    }
     let date = new Date(normalized);
     if (isNaN(date.getTime())) {
-      date = new Date(normalized.replace(" ", "T"));
+      date = new Date(dateStr.trim().replace(" ", "T"));
     }
     if (isNaN(date.getTime())) return "";
     const now = new Date();
