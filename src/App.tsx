@@ -123,7 +123,13 @@ function AppContent() {
                   if (defaultSession && defaultSession.querySessionHistory) {
                     localStorage.setItem('default_workspace_analysis', JSON.stringify(defaultSession.querySessionHistory));
                     const hist = defaultSession.querySessionHistory;
-                    const createdAt = hist[hist.length - 1]?.created_at || hist[0]?.created_at || (defaultSession as any).createdAt;
+                    const analysisTurn = hist.find((t: any) =>
+                      t.question?.startsWith('default_') ||
+                      t.question === 'Generated Session Analysis Report' ||
+                      t.question === 'Updated Analysis from newly uploaded files' ||
+                      /executive\s+summary/i.test(t.answer || '')
+                    ) || hist[0];
+                    const createdAt = analysisTurn?.created_at || analysisTurn?.timestamp || hist[0]?.created_at || (defaultSession as any).createdAt;
                     if (createdAt) localStorage.setItem('default_workspace_analysis_time', createdAt);
                     window.dispatchEvent(new Event('default-workspace-updated'));
                   } else {
@@ -226,7 +232,13 @@ function AppContent() {
           if (defaultSession && defaultSession.querySessionHistory) {
             localStorage.setItem('default_workspace_analysis', JSON.stringify(defaultSession.querySessionHistory));
             const hist = defaultSession.querySessionHistory;
-            const createdAt = hist[hist.length - 1]?.created_at || hist[0]?.created_at || (defaultSession as any).createdAt;
+            const analysisTurn = hist.find((t: any) =>
+              t.question?.startsWith('default_') ||
+              t.question === 'Generated Session Analysis Report' ||
+              t.question === 'Updated Analysis from newly uploaded files' ||
+              /executive\s+summary/i.test(t.answer || '')
+            ) || hist[0];
+            const createdAt = analysisTurn?.created_at || analysisTurn?.timestamp || hist[0]?.created_at || (defaultSession as any).createdAt;
             if (createdAt) localStorage.setItem('default_workspace_analysis_time', createdAt);
             window.dispatchEvent(new Event('default-workspace-updated'));
           } else {

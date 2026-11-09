@@ -74,10 +74,10 @@ const getRelativeTimeString = (dateStr?: string | null): string => {
   if (!dateStr) return "";
   try {
     let normalized = dateStr.trim();
-    if (!normalized.endsWith("Z") && !/[+-]\d{2}:\d{2}$/.test(normalized)) {
-      normalized = normalized.replace(" ", "T") + "Z";
+    let date = new Date(normalized);
+    if (isNaN(date.getTime())) {
+      date = new Date(normalized.replace(" ", "T"));
     }
-    const date = new Date(normalized);
     if (isNaN(date.getTime())) return "";
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -479,7 +479,7 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
             {relativeTime && (
               <span
                 className="inline-flex items-center text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full cursor-default select-none ml-1.5"
-                title={createdAt ? new Date(createdAt).toLocaleString() : ""}
+                title={createdAt ? `Last Updated / Synced: ${new Date(createdAt).toLocaleString()}` : "Last Updated / Synced"}
               >
                 {relativeTime}
               </span>

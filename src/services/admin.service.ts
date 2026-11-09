@@ -23,7 +23,7 @@ export const adminService = {
     },
 
     runSchedulerNow: async (): Promise<any> => {
-        return apiService.post('/api/scheduler/run-now');
+        return apiService.post('/api/scheduler/run-now', {});
     },
 
     updateSystemConfig: async (key: string, value: any, description: string = ''): Promise<any> => {
