@@ -12,12 +12,11 @@ import {
   Cell,
 } from "recharts";
 import { COLORS } from "./mockData";
-import { FilterSelect, useSessionId, queuedFetch } from "./dashboardHooks";
+import { useSessionId, queuedFetch } from "./dashboardHooks";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 
 const DIMENSION_OPTIONS = [
   { label: "Customers", value: "Customers" },
-  { label: "Dealers", value: "Dealers" },
   { label: "Territories", value: "Territories" },
   { label: "Regions", value: "Regions" },
   { label: "Materials", value: "Materials" },
@@ -33,10 +32,99 @@ const DAYS_OPTIONS = [
 
 const Y_AXIS_LABEL_MAP: Record<string, string> = {
   Customers: "Customer Name",
-  Dealers: "Dealer Name",
   Territories: "Territory",
   Regions: "Region",
   Materials: "Material Description",
+};
+
+// Custom YAxis tick component with hover title to reveal the full untruncated name
+const CustomYAxisTick = (props: any) => {
+  const { x, y, payload } = props;
+  const fullName = String(payload?.value ?? "");
+  const displayName = fullName.length > 15 ? `${fullName.substring(0, 15)}...` : fullName;
+
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <title>{fullName}</title>
+      <text
+        x={-8}
+        y={3}
+        textAnchor="end"
+        fill="#334155"
+        fontSize={10}
+        fontWeight={700}
+        className="cursor-pointer select-none"
+      >
+        {displayName}
+      </text>
+    </g>
+  );
+};
+
+// Dynamic unit configuration based on actual values in each section
+const getUnitConfig = (items: any[]) => {
+  const maxVal = Math.max(0, ...items.map((it) => Number(it.sales_value || 0)));
+
+  // If >= ₹5 Lakhs, format in Crores (standard in JK Tyre dashboard)
+  if (maxVal >= 500000) {
+    return {
+      divisor: 10000000,
+      unit: "Cr",
+      axisLabel: "Sales Value (₹)",
+      formatTick: (val: number) => {
+        if (val === 0) return "0";
+        const formatted = Number(val.toFixed(2)).toString();
+        return `₹${formatted} Cr`;
+      },
+      formatTooltip: (rawVal: number) => {
+        const crVal = (rawVal / 10000000).toFixed(2);
+        return `₹${crVal} Cr`;
+      },
+    };
+  } else if (maxVal >= 100000) {
+    // 1 Lakh to 5 Lakhs
+    return {
+      divisor: 100000,
+      unit: "L",
+      axisLabel: "Sales Value (₹ Lakh)",
+      formatTick: (val: number) => {
+        if (val === 0) return "0";
+        const formatted = Number(val.toFixed(2)).toString();
+        return `₹${formatted} L`;
+      },
+      formatTooltip: (rawVal: number) => {
+        const lVal = (rawVal / 100000).toFixed(2);
+        return `₹${lVal} Lakh (₹${Number(rawVal).toLocaleString("en-IN")})`;
+      },
+    };
+  } else if (maxVal >= 1000) {
+    // 1 Thousand to 1 Lakh
+    return {
+      divisor: 1000,
+      unit: "K",
+      axisLabel: "Sales Value (₹ K)",
+      formatTick: (val: number) => {
+        if (val === 0) return "0";
+        const formatted = Number(val.toFixed(2)).toString();
+        return `₹${formatted} K`;
+      },
+      formatTooltip: (rawVal: number) => {
+        return `₹${(rawVal / 1000).toFixed(2)} K (₹${Number(rawVal).toLocaleString("en-IN")})`;
+      },
+    };
+  } else {
+    // Under ₹1,000 (direct rupees)
+    return {
+      divisor: 1,
+      unit: "",
+      axisLabel: "Sales Value (₹)",
+      formatTick: (val: number) => {
+        if (val === 0) return "0";
+        return `₹${Number(val.toFixed(0)).toString()}`;
+      },
+      formatTooltip: (rawVal: number) => `₹${Number(rawVal).toLocaleString("en-IN")}`,
+    };
+  }
 };
 
 export const TopBottomPerformanceChart = () => {
@@ -74,21 +162,8 @@ export const TopBottomPerformanceChart = () => {
 
         const data = await response.json();
         if (data.status === "success") {
-          const mapChartItems = (items: any[]) => {
-            return (items || []).map((item: any) => {
-              const val = Number(item.sales_value || 0);
-              const plotValue = val >= 100000 ? val / 10000000 : val;
-              return {
-                name: item.name || "Unknown",
-                value: plotValue,
-                sales_value: val,
-                rank: item.rank,
-              };
-            });
-          };
-
-          setTopData(mapChartItems(data.top_10));
-          setBottomData(mapChartItems(data.bottom_10));
+          setTopData(data.top_10 || []);
+          setBottomData(data.bottom_10 || []);
         } else {
           setTopData([]);
           setBottomData([]);
@@ -107,16 +182,24 @@ export const TopBottomPerformanceChart = () => {
 
   const yAxisLabel = Y_AXIS_LABEL_MAP[dimension] || "Entity";
 
-  const renderBarCard = (
+  const renderSection = (
     title: string,
-    chartData: any[],
+    rawItems: any[],
     isTop: boolean
   ) => {
+    const config = getUnitConfig(rawItems);
+    const chartData = rawItems.map((item) => ({
+      name: item.name || "Unknown",
+      value: Number((Number(item.sales_value || 0) / config.divisor).toFixed(4)),
+      sales_value: Number(item.sales_value || 0),
+      rank: item.rank,
+    }));
+
     return (
-      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col h-[400px]">
-        <div className="flex items-start justify-between mb-4 gap-4">
+      <div className="flex flex-col h-[380px]">
+        <div className="flex items-center justify-between mb-3 gap-2">
           <div className="flex items-center gap-2">
-            <h3 className="text-lg font-bold text-slate-800 shrink-0">
+            <h3 className="text-base font-bold text-slate-800">
               {title}
             </h3>
             <span
@@ -158,10 +241,10 @@ export const TopBottomPerformanceChart = () => {
                   tick={{ fontSize: 10, fontWeight: 600 }}
                   axisLine={false}
                   tickLine={false}
-                  tickFormatter={(val) => (val === 0 ? "₹0" : `₹${Number(val).toFixed(2)} Cr`)}
+                  tickFormatter={config.formatTick}
                 >
                   <Label
-                    value="Sales Value (₹)"
+                    value={config.axisLabel}
                     offset={5}
                     position="bottom"
                     style={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
@@ -170,14 +253,11 @@ export const TopBottomPerformanceChart = () => {
                 <YAxis
                   type="category"
                   dataKey="name"
-                  tick={{ fontSize: 10, fill: "#334155", fontWeight: 700 }}
+                  tick={<CustomYAxisTick />}
                   axisLine={{ stroke: "#475569", strokeWidth: 1 }}
                   tickLine={false}
-                  tickMargin={10}
+                  tickMargin={5}
                   width={110}
-                  tickFormatter={(val) =>
-                    String(val).length > 15 ? `${String(val).substring(0, 15)}...` : String(val)
-                  }
                 >
                   <Label
                     value={yAxisLabel}
@@ -197,13 +277,8 @@ export const TopBottomPerformanceChart = () => {
                     boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                   }}
                   formatter={(value: any, name: any, props: any) => {
-                    const salesValue = props?.payload?.sales_value;
-                    if (salesValue !== undefined && salesValue !== null) {
-                      const val = Number(salesValue);
-                      const formatted = `₹${(val / 10000000).toFixed(2)} Cr`;
-                      return [formatted, "Sales Value"];
-                    }
-                    return [`₹${Number(value).toFixed(2)} Cr`, "Sales Value"];
+                    const rawVal = props?.payload?.sales_value ?? value;
+                    return [config.formatTooltip(Number(rawVal)), "Sales Value"];
                   }}
                   labelFormatter={(label: any) => `${yAxisLabel}: ${label}`}
                 />
@@ -224,9 +299,9 @@ export const TopBottomPerformanceChart = () => {
   };
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Shared Filter Bar matching Dashboard style */}
-      <div className="bg-white px-6 py-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-6">
+      {/* Top Header of the single card */}
+      <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
         <div>
           <h2 className="text-base font-bold text-slate-800">
             Top 10 & Bottom 10 Sales Performance
@@ -237,27 +312,49 @@ export const TopBottomPerformanceChart = () => {
         </div>
 
         <div className="flex items-center gap-3 ml-auto">
-          <FilterSelect
-            label="Dimension"
-            value={dimension}
-            onChange={(e: any) => setDimension(e.target.value)}
-            options={DIMENSION_OPTIONS}
-          />
-          <FilterSelect
-            label="Rolling Window"
-            value={days}
-            onChange={(e: any) => setDays(e.target.value)}
-            options={DAYS_OPTIONS}
-          />
+          {/* Dimension dropdown (Dealers removed, no 'All') */}
+          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors focus-within:border-slate-300 focus-within:shadow-sm">
+            <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+              Dimension:
+            </span>
+            <select
+              value={dimension}
+              onChange={(e) => setDimension(e.target.value)}
+              className="text-xs font-semibold text-slate-700 bg-transparent outline-none cursor-pointer"
+            >
+              {DIMENSION_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Rolling Window dropdown */}
+          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors focus-within:border-slate-300 focus-within:shadow-sm">
+            <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
+              Rolling Window:
+            </span>
+            <select
+              value={days}
+              onChange={(e) => setDays(e.target.value)}
+              className="text-xs font-semibold text-slate-700 bg-transparent outline-none cursor-pointer"
+            >
+              {DAYS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Side-by-Side Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {renderBarCard(`Top 10 ${dimension}`, topData, true)}
-        {renderBarCard(`Bottom 10 ${dimension}`, bottomData, false)}
+      {/* Inside the Single Card: Two side-by-side sections */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {renderSection(`Top 10 ${dimension}`, topData, true)}
+        {renderSection(`Bottom 10 ${dimension}`, bottomData, false)}
       </div>
     </div>
   );
 };
-
