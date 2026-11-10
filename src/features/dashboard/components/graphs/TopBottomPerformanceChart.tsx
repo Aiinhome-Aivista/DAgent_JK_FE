@@ -17,6 +17,7 @@ import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 
 const DIMENSION_OPTIONS = [
   { label: "Customers", value: "Customers" },
+  { label: "Tyres", value: "Tyres" },
   { label: "Territories", value: "Territories" },
   { label: "Regions", value: "Regions" },
   { label: "Materials", value: "Materials" },
@@ -32,6 +33,7 @@ const DAYS_OPTIONS = [
 
 const Y_AXIS_LABEL_MAP: Record<string, string> = {
   Customers: "Customer Name",
+  Tyres: "Tyre Type",
   Territories: "Territory",
   Regions: "Region",
   Materials: "Material Description",
@@ -41,13 +43,13 @@ const Y_AXIS_LABEL_MAP: Record<string, string> = {
 const CustomYAxisTick = (props: any) => {
   const { x, y, payload } = props;
   const fullName = String(payload?.value ?? "");
-  const displayName = fullName.length > 15 ? `${fullName.substring(0, 15)}...` : fullName;
+  const displayName = fullName.length > 13 ? `${fullName.substring(0, 13)}...` : fullName;
 
   return (
     <g transform={`translate(${x},${y})`}>
       <title>{fullName}</title>
       <text
-        x={-8}
+        x={-6}
         y={3}
         textAnchor="end"
         fill="#334155"
@@ -228,7 +230,7 @@ export const TopBottomPerformanceChart = () => {
               <BarChart
                 data={chartData}
                 layout="vertical"
-                margin={{ top: 5, right: 30, left: 60, bottom: 20 }}
+                margin={{ top: 10, right: 25, left: 35, bottom: 25 }}
               >
                 <CartesianGrid
                   vertical={true}
@@ -257,14 +259,13 @@ export const TopBottomPerformanceChart = () => {
                   axisLine={{ stroke: "#475569", strokeWidth: 1 }}
                   tickLine={false}
                   tickMargin={5}
-                  width={110}
+                  width={115}
                 >
                   <Label
                     value={yAxisLabel}
                     angle={-90}
-                    position="insideLeft"
-                    style={{ fill: "#64748b", fontSize: 11, fontWeight: 600 }}
-                    offset={-10}
+                    position="left"
+                    style={{ textAnchor: "middle", fill: "#64748b", fontSize: 11, fontWeight: 600 }}
                   />
                 </YAxis>
                 <RechartsTooltip
@@ -312,7 +313,7 @@ export const TopBottomPerformanceChart = () => {
         </div>
 
         <div className="flex items-center gap-3 ml-auto">
-          {/* Dimension dropdown (Dealers removed, no 'All') */}
+          {/* Dimension dropdown (Includes Tyres, Customers, Territories, Regions, Materials) */}
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors focus-within:border-slate-300 focus-within:shadow-sm">
             <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
               Dimension:
@@ -330,22 +331,30 @@ export const TopBottomPerformanceChart = () => {
             </select>
           </div>
 
-          {/* Rolling Window dropdown */}
-          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors focus-within:border-slate-300 focus-within:shadow-sm">
+          {/* Rolling Window selector pills matching Screenshot 2 */}
+          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1 shrink-0">
             <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-              Rolling Window:
+              Days:
             </span>
-            <select
-              value={days}
-              onChange={(e) => setDays(e.target.value)}
-              className="text-xs font-semibold text-slate-700 bg-transparent outline-none cursor-pointer"
-            >
-              {DAYS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-1 shrink-0">
+              {DAYS_OPTIONS.map((d) => {
+                const isSelected = days === d.value;
+                return (
+                  <button
+                    key={d.value}
+                    type="button"
+                    onClick={() => setDays(d.value)}
+                    className={`px-2.5 py-0.5 text-xs font-bold rounded transition-all border shrink-0 cursor-pointer ${
+                      isSelected
+                        ? "border-amber-400 bg-amber-50 text-amber-900 shadow-xs"
+                        : "border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    {d.value}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

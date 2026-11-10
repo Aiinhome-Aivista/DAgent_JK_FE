@@ -67,6 +67,60 @@ interface SalesNumbersRow {
   is_total?: boolean;
 }
 
+const CATEGORY_LABEL_MAP: Record<string, string> = {
+  "0": "TRUCK",
+  "1": "LCV",
+  "2": "CAR",
+  "3": "JEEP",
+  "4": "TRACTOR",
+  "5": "TRACTOR",
+  "6": "3W",
+  "7": "FARM",
+  "A": "ADV",
+  "B": "2W / SCOOTER",
+  "C": "LCV",
+  "D": "OTR / DUMPER",
+  "E": "OTR / EARTHMOVER",
+  "F": "FARM / TRACTOR",
+  "H": "3W",
+  "I": "INDUSTRIAL",
+  "J": "JEEP / SUV",
+  "K": "CRANE / FORKLIFT",
+  "L": "LIGHT TRUCK",
+  "M": "2W / MOTORCYCLE",
+  "MOTOR": "2W / MOTORCYCLE",
+  "N": "LCV / BUS",
+  "O": "OTR",
+  "P": "CAR",
+  "Q": "3W / QUAD",
+  "R": "SPECIAL / ROLLER",
+  "S": "2W / SCOOTER",
+  "T": "TRACTOR",
+  "TBB": "TRUCK",
+  "TBR": "TRUCK",
+  "TRACTOR": "TRACTOR",
+  "V": "COMMERCIAL / OTR",
+  "Y": "INDUSTRIAL",
+  "Z": "RETREAD",
+};
+
+const formatCategoryName = (rawCategory: string): string => {
+  if (!rawCategory) return "Unknown";
+  const trimmed = rawCategory.trim();
+  if (trimmed.toLowerCase() === "total") return "Total";
+
+  const parts = trimmed.split(/\s*-\s*/);
+  if (parts.length >= 2) {
+    const code = parts[0].trim().toUpperCase();
+    const construction = parts.slice(1).join(" - ").trim().toUpperCase();
+    const mapped = CATEGORY_LABEL_MAP[code] || parts[0].trim();
+    return `${mapped} - ${construction}`;
+  } else {
+    const code = trimmed.toUpperCase();
+    return CATEGORY_LABEL_MAP[code] || trimmed;
+  }
+};
+
 interface SalesSummaryNoValuesRow {
   zone: string;
   row_type: "Actual" | "Target" | "Achv %" | string;
@@ -718,7 +772,7 @@ export const DomesticSalesValueAchievementCard = () => {
                   return (
                     <tr key={idx} className={`${rowBg} transition-colors text-slate-700`}>
                       <td className="border border-slate-300 px-3 py-1.5 text-left font-medium whitespace-nowrap">
-                        {row.category}
+                        {formatCategoryName(row.category)}
                       </td>
                       <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
                         {fmtCell(row.prev_year_act)}
