@@ -198,22 +198,11 @@ export const TopBottomPerformanceChart = () => {
     }));
 
     return (
-      <div className="flex flex-col h-[380px]">
+      <div className="bg-slate-50/50 rounded-xl border border-slate-200 p-4 sm:p-5 flex flex-col h-[400px]">
         <div className="flex items-center justify-between mb-3 gap-2">
-          <div className="flex items-center gap-2">
-            <h3 className="text-base font-bold text-slate-800">
-              {title}
-            </h3>
-            <span
-              className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                isTop
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                  : "bg-amber-50 text-amber-700 border border-amber-200"
-              }`}
-            >
-              {isTop ? "Highest Sales" : "Lowest Positive Sales"}
-            </span>
-          </div>
+          <h3 className="text-base font-bold text-slate-800">
+            {title}
+          </h3>
         </div>
 
         <div className="flex-1 min-h-0">
@@ -301,23 +290,17 @@ export const TopBottomPerformanceChart = () => {
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-6">
-      {/* Top Header of the single card */}
+      {/* Top Header of the card */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
         <div>
           <h2 className="text-base font-bold text-slate-800">
-            Top 10 & Bottom 10 Sales Performance
+            Toppers and Draggers
           </h2>
-          <p className="text-xs text-slate-500 font-medium">
-            Side-by-side rolling window ranking comparing highest vs lowest positive contributors
-          </p>
         </div>
 
         <div className="flex items-center gap-3 ml-auto">
           {/* Dimension dropdown (Includes Tyres, Customers, Territories, Regions, Materials) */}
-          <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors focus-within:border-slate-300 focus-within:shadow-sm">
-            <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-              Dimension:
-            </span>
+          <div className="flex items-center bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors focus-within:border-slate-300 focus-within:shadow-sm">
             <select
               value={dimension}
               onChange={(e) => setDimension(e.target.value)}
@@ -331,7 +314,7 @@ export const TopBottomPerformanceChart = () => {
             </select>
           </div>
 
-          {/* Rolling Window selector pills matching Screenshot 2 */}
+          {/* Rolling Window selector pills */}
           <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1 shrink-0">
             <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
               Days:
@@ -359,8 +342,8 @@ export const TopBottomPerformanceChart = () => {
         </div>
       </div>
 
-      {/* Inside the Single Card: Two side-by-side sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      {/* Inside the Container: Two side-by-side cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {renderSection(`Top 10 ${dimension}`, topData, true)}
         {renderSection(`Bottom 10 ${dimension}`, bottomData, false)}
       </div>
