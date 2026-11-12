@@ -387,8 +387,7 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
               if (grpMatch) {
                 const groupName = grpMatch[1].trim();
                 const groupCode = grpMatch[2].trim();
-                const dateClause = accountGroupDateRange ? ` for ${accountGroupDateRange}` : '';
-                const question = `List all active customers in Account Group ${groupName} (${groupCode})${dateClause} with customer code, customer name, sales value, and units sold`;
+                const question = `Active Customers in ${groupName} (${groupCode}) (Current Year)`;
                 itemContent = wrapLabelAsLink(itemContent, question);
               }
             } else if (inChurnSection) {
@@ -489,8 +488,7 @@ export const handleAccountGroupViewClick = (e: { target: EventTarget | null }) =
   const dateRange = btn.getAttribute('data-date-range') || '';
   if (!groupCode) return;
 
-  const dateClause = dateRange ? ` for ${dateRange}` : '';
-  const question = `List all active customers in Account Group ${groupName} (${groupCode})${dateClause} with customer code, customer name, sales value, and units sold`;
+  const question = `Active Customers in ${groupName} (${groupCode}) (Current Year)`;
 
   window.dispatchEvent(new CustomEvent('rag-chat-ask', { detail: { question } }));
 };
