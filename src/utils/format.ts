@@ -157,7 +157,7 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
           const itemContent = trimmed.replace(/^[-*•]\s+/, '');
           const isCategorySubheader =
             /(?:Breakdown|Top SKUs|SKUs by Category|by Category)<\/strong>:\s*$/i.test(itemContent) ||
-            /^(?:Account Group Breakdown|Top SKUs by Category)/i.test(itemContent.replace(/<[^>]+>/g, '').trim()) && itemContent.trim().endsWith(':');
+            /^(?:Account Group Breakdown|Top SKUs by Category|Top 5 SKUs)/i.test(itemContent.replace(/<[^>]+>/g, '').trim()) && itemContent.trim().endsWith(':');
 
           if (isCategorySubheader) {
             if (inList) {
