@@ -219,10 +219,6 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
           'Accounts with > 10% Sales Decline (Last 30 Days)',
         ],
         [
-          /^Steepest\s+Sales\s+Decline\s+Accounts/i,
-          'Steepest Sales Decline Accounts (Last 30 Days)',
-        ],
-        [
           /^High-Risk\s+Inactive\s+Accounts/i,
           'High-Risk Inactive Accounts (Last 30 Days)',
         ],
@@ -311,6 +307,144 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
         return `<div class="sku-tabs-card my-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-xs"><div class="flex items-center justify-between gap-2 mb-3"><h4 class="text-sm font-bold text-[var(--text-primary)] m-0 whitespace-nowrap overflow-x-auto">${cleanTitle}</h4></div><div class="flex flex-wrap gap-1.5 pb-3 border-b border-[var(--border)]">${tabsHtml}</div>${panelsHtml}</div>`;
       };
 
+      interface TopWorstItem {
+        name: string;
+        value: string;
+        metric?: string;
+      }
+
+      interface TopWorstLineData {
+        kind: 'top' | 'worst' | 'decline';
+        dimension: string; // 'Customers', 'Territories', 'Regions', 'Accounts', etc.
+        dateContext: string; // '(Last 30 Days)', etc.
+        fullTitle: string;
+        items: TopWorstItem[];
+      }
+
+      const parseTopWorstLine = (rawLine: string): TopWorstLineData | null => {
+        const clean = rawLine.replace(/^[-*•]\s+/, '').trim();
+        const match = clean.match(/^\*{0,2}(Top\s*\d*|Worst\s*\d*|Bottom\s*\d*|Steepest\s+Sales\s+Decline)\s+([^:*\n]+?)\*{0,2}\s*:\s*(.+)$/i);
+        if (!match) return null;
+
+        const prefix = match[1].trim();
+        const restTitle = match[2].trim();
+        const itemsStr = match[3].trim();
+
+        let kind: 'top' | 'worst' | 'decline' = 'top';
+        if (/^(worst|bottom)/i.test(prefix)) {
+          kind = 'worst';
+        } else if (/decline/i.test(prefix) || /decline/i.test(restTitle)) {
+          kind = 'decline';
+        }
+
+        const dateMatch = restTitle.match(/\(([^)]+)\)/);
+        const dateContext = dateMatch ? `(${dateMatch[1].trim()})` : '';
+        const dimension = restTitle.replace(/\([^)]+\)/g, '').trim();
+
+        const items: TopWorstItem[] = [];
+        const regex = /(.+?)\s*\((?:(Sales\s*Value|Decline|Revenue):\s*)?([^)]+)\)(?:\s*,\s*|$)/gi;
+        let m: RegExpExecArray | null;
+        while ((m = regex.exec(itemsStr)) !== null) {
+          items.push({
+            name: m[1].replace(/^,\s*/, '').trim(),
+            metric: m[2] ? m[2].trim() : undefined,
+            value: m[3].trim(),
+          });
+        }
+
+        if (items.length < 2) return null;
+
+        return {
+          kind,
+          dimension,
+          dateContext,
+          fullTitle: `${prefix} ${restTitle}`.trim(),
+          items,
+        };
+      };
+
+      const renderSubTable = (
+        title: string,
+        badge: string,
+        badgeCls: string,
+        containerBorderCls: string,
+        valColorCls: string,
+        entityLabel: string,
+        valHeader: string,
+        items: TopWorstItem[]
+      ): string => {
+        const rows = items
+          .map((it, idx) => {
+            const nameEsc = escapeAttr(it.name);
+            const valEsc = escapeAttr(it.value);
+            const borderCls = idx < items.length - 1 ? 'border-b border-[var(--border)]/50' : '';
+            return `<tr class="${borderCls} hover:bg-[var(--surface-hover)] transition-colors"><td class="py-1.5 px-2.5 text-center text-[var(--text-secondary)] font-medium text-xs">${idx + 1}</td><td class="py-1.5 px-2 font-medium text-[var(--text-primary)] text-xs truncate max-w-[160px] sm:max-w-[220px]" title="${nameEsc}">${nameEsc}</td><td class="py-1.5 px-2.5 text-right font-semibold ${valColorCls} text-xs whitespace-nowrap">${valEsc}</td></tr>`;
+          })
+          .join('');
+
+        return `<div class="rounded-lg border ${containerBorderCls} bg-[var(--surface)] overflow-hidden shadow-2xs"><div class="px-3 py-1.5 bg-[var(--surface-hover)] border-b border-[var(--border)] flex items-center justify-between"><span class="text-xs font-bold text-[var(--text-primary)]">${escapeAttr(title)}</span><span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeCls}">${badge}</span></div><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="text-[11px] font-semibold text-[var(--text-secondary)] border-b border-[var(--border)] bg-[var(--surface-hover)]/30"><th class="py-1.5 px-2.5 text-center w-7">#</th><th class="py-1.5 px-2">${escapeAttr(entityLabel)}</th><th class="py-1.5 px-2.5 text-right">${escapeAttr(valHeader)}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+      };
+
+      const renderTopWorstComparisonCard = (
+        top: TopWorstLineData,
+        worst: TopWorstLineData
+      ): string => {
+        const entityPlural = top.dimension || 'Entities';
+        const entitySingular = entityPlural.replace(/s$/i, '').replace(/ies$/i, 'y');
+        const dateCtx = top.dateContext || worst.dateContext || '';
+        const mainTitle = `Top ${top.items.length} vs Worst ${worst.items.length} ${entityPlural} ${dateCtx}`.trim();
+
+        const topTable = renderSubTable(
+          `Top ${top.items.length} ${entityPlural}`,
+          'Highest',
+          'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300',
+          'border-emerald-500/30',
+          'text-emerald-700 dark:text-emerald-400',
+          entitySingular,
+          'Sales Value',
+          top.items
+        );
+
+        const worstTable = renderSubTable(
+          `Worst ${worst.items.length} ${entityPlural}`,
+          'Lowest',
+          'bg-rose-500/15 text-rose-800 dark:text-rose-300',
+          'border-rose-500/30',
+          'text-rose-700 dark:text-rose-400',
+          entitySingular,
+          'Sales Value',
+          worst.items
+        );
+
+        return `<div class="my-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3.5 shadow-xs"><div class="flex items-center justify-between mb-2.5 pb-2 border-b border-[var(--border)]"><span class="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">${escapeAttr(mainTitle)}</span></div><div class="grid grid-cols-1 md:grid-cols-2 gap-3">${topTable}${worstTable}</div></div>`;
+      };
+
+      const renderSingleMetricTableCard = (data: TopWorstLineData): string => {
+        const isDecline = data.kind === 'decline';
+        const isWorst = data.kind === 'worst';
+        const badge = isDecline ? 'Decline Risk' : isWorst ? 'Lowest' : 'Highest';
+        const badgeCls = isDecline || isWorst
+          ? 'bg-rose-500/15 text-rose-800 dark:text-rose-300'
+          : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300';
+        const containerBorderCls = isDecline || isWorst ? 'border-rose-500/30' : 'border-emerald-500/30';
+        const valColorCls = isDecline || isWorst ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400';
+        const entityLabel = data.dimension.replace(/s$/i, '').replace(/ies$/i, 'y') || 'Item';
+        const valHeader = isDecline ? 'Decline %' : 'Sales Value';
+
+        const subTable = renderSubTable(
+          data.fullTitle,
+          badge,
+          badgeCls,
+          containerBorderCls,
+          valColorCls,
+          entityLabel,
+          valHeader,
+          data.items
+        );
+
+        return `<div class="my-3">${subTable}</div>`;
+      };
+
       const closeLists = () => {
         if (inList) {
           resultHtml += `</ul>`;
@@ -340,6 +474,82 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
             inChurnSection = false;
             resultHtml += renderTopSkusTabbedCard(candidateTitle, categories);
             i = endIdx;
+            continue;
+          }
+        }
+
+        // Check for Top/Worst/Decline structured metrics tables (Customers, Territories, Regions, Decline Accounts)
+        const topWorstParsed = parseTopWorstLine(trimmed);
+        if (topWorstParsed) {
+          closeLists();
+          // Peek ahead to see if the next non-empty line is a counterpart (e.g. Top followed by Worst)
+          let nextIdx = i + 1;
+          while (nextIdx < lines.length && lines[nextIdx].trim() === '') {
+            nextIdx++;
+          }
+          let paired = false;
+          if (nextIdx < lines.length) {
+            const nextParsed = parseTopWorstLine(lines[nextIdx].trim());
+            if (
+              nextParsed &&
+              ((topWorstParsed.kind === 'top' && nextParsed.kind === 'worst') ||
+                (topWorstParsed.kind === 'worst' && nextParsed.kind === 'top')) &&
+              topWorstParsed.dimension.toLowerCase() === nextParsed.dimension.toLowerCase()
+            ) {
+              const topData = topWorstParsed.kind === 'top' ? topWorstParsed : nextParsed;
+              const worstData = topWorstParsed.kind === 'worst' ? topWorstParsed : nextParsed;
+              resultHtml += renderTopWorstComparisonCard(topData, worstData);
+              i = nextIdx;
+              paired = true;
+            }
+          }
+
+          if (!paired) {
+            resultHtml += renderSingleMetricTableCard(topWorstParsed);
+          }
+          continue;
+        }
+
+        // Detect standard Markdown table: | col1 | col2 |
+        if (
+          trimmed.startsWith('|') &&
+          trimmed.endsWith('|') &&
+          i + 1 < lines.length &&
+          /^\s*\|?\s*:?-+:?\s*\|/.test(lines[i + 1])
+        ) {
+          closeLists();
+          const tableLines: string[] = [];
+          while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+            tableLines.push(lines[i].trim());
+            i++;
+          }
+          i--; // Loop will increment
+
+          if (tableLines.length >= 2) {
+            const parseRow = (rowStr: string) =>
+              rowStr
+                .replace(/^\||\|$/g, '')
+                .split('|')
+                .map((c) => c.trim());
+
+            const headerCells = parseRow(tableLines[0]);
+            // tableLines[1] is separator row (|---|---|)
+            const bodyRows = tableLines.slice(2).map(parseRow);
+
+            const theadHtml = `<thead><tr class="text-[11px] font-semibold text-[var(--text-secondary)] border-b border-[var(--border)] bg-[var(--surface-hover)]/40">${headerCells
+              .map((c) => `<th class="py-2 px-3 text-left">${formatInline(c)}</th>`)
+              .join('')}</tr></thead>`;
+
+            const tbodyHtml = `<tbody>${bodyRows
+              .map(
+                (row) =>
+                  `<tr class="border-b border-[var(--border)]/40 hover:bg-[var(--surface-hover)] transition-colors">${row
+                    .map((c) => `<td class="py-1.5 px-3 text-xs text-[var(--text-primary)]">${formatInline(c)}</td>`)
+                    .join('')}</tr>`
+              )
+              .join('')}</tbody>`;
+
+            resultHtml += `<div class="my-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] overflow-hidden shadow-2xs"><div class="overflow-x-auto"><table class="w-full text-xs text-left">${theadHtml}${tbodyHtml}</table></div></div>`;
             continue;
           }
         }
