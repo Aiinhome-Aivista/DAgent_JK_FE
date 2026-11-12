@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "motion/react";
 import { Sparkles } from "lucide-react";
 import { useConnectorContext } from "../../../../context/ConnectorContext";
+import { formatInlineMarkdown as baseFormatInlineMarkdown } from "../../../../utils/format";
 import {
   BarChart,
   Bar,
@@ -20,20 +21,8 @@ import {
 
 const COLORS = ['#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4'];
 
-const formatInlineMarkdown = (text: string) => {
-  if (!text) return "";
-  let escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
-  escaped = escaped.replace(
-    /\*\*([^*]+)\*\*/g,
-    '<strong class="font-bold text-[var(--text-primary)]">$1</strong>',
-  );
-  escaped = escaped.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
-  return escaped;
-};
+const formatInlineMarkdown = (text: string) =>
+  baseFormatInlineMarkdown(text, { strongClass: "font-bold text-[var(--text-primary)]" });
 
 export const GenericDashboardGraphs = () => {
   const { connectorResults } = useConnectorContext();
