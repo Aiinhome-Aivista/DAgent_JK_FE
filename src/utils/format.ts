@@ -368,6 +368,9 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
         badge: string,
         badgeCls: string,
         containerBorderCls: string,
+        headerBgCls: string,
+        theadBgCls: string,
+        hoverBgCls: string,
         valColorCls: string,
         entityLabel: string,
         valHeader: string,
@@ -376,13 +379,18 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
         const rows = items
           .map((it, idx) => {
             const nameEsc = escapeAttr(it.name);
-            const valEsc = escapeAttr(it.value);
+            let valText = it.value;
+            // If sales value was rounded to 0 Cr for small positive transactions, display clearly as < ₹0.01 Cr (< ₹1 L)
+            if (/^₹?\s*0(?:\.00?)?\s*Cr$/i.test(valText.trim())) {
+              valText = '< ₹0.01 Cr (< ₹1 L)';
+            }
+            const valEsc = escapeAttr(valText);
             const borderCls = idx < items.length - 1 ? 'border-b border-[var(--border)]/50' : '';
-            return `<tr class="${borderCls} hover:bg-[var(--surface-hover)] transition-colors"><td class="py-1.5 px-2.5 text-center text-[var(--text-secondary)] font-medium text-xs">${idx + 1}</td><td class="py-1.5 px-2 font-medium text-[var(--text-primary)] text-xs truncate max-w-[160px] sm:max-w-[220px]" title="${nameEsc}">${nameEsc}</td><td class="py-1.5 px-2.5 text-right font-semibold ${valColorCls} text-xs whitespace-nowrap">${valEsc}</td></tr>`;
+            return `<tr class="${borderCls} ${hoverBgCls} transition-colors"><td class="py-1.5 px-2.5 text-center text-[var(--text-secondary)] font-medium text-xs">${idx + 1}</td><td class="py-1.5 px-2 font-medium text-[var(--text-primary)] text-xs truncate max-w-[160px] sm:max-w-[220px]" title="${nameEsc}">${nameEsc}</td><td class="py-1.5 px-2.5 text-right font-semibold ${valColorCls} text-xs whitespace-nowrap">${valEsc}</td></tr>`;
           })
           .join('');
 
-        return `<div class="rounded-lg border ${containerBorderCls} bg-[var(--surface)] overflow-hidden shadow-2xs"><div class="px-3 py-1.5 bg-[var(--surface-hover)] border-b border-[var(--border)] flex items-center justify-between"><span class="text-xs font-bold text-[var(--text-primary)]">${escapeAttr(title)}</span><span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeCls}">${badge}</span></div><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="text-[11px] font-semibold text-[var(--text-secondary)] border-b border-[var(--border)] bg-[var(--surface-hover)]/30"><th class="py-1.5 px-2.5 text-center w-7">#</th><th class="py-1.5 px-2">${escapeAttr(entityLabel)}</th><th class="py-1.5 px-2.5 text-right">${escapeAttr(valHeader)}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+        return `<div class="rounded-lg border ${containerBorderCls} bg-[var(--surface)] overflow-hidden shadow-2xs"><div class="px-3 py-1.5 ${headerBgCls} flex items-center justify-between"><span class="text-xs font-bold text-[var(--text-primary)]">${escapeAttr(title)}</span><span class="text-[10px] font-semibold px-2 py-0.5 rounded-full ${badgeCls}">${badge}</span></div><div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead><tr class="text-[11px] font-semibold text-[var(--text-secondary)] border-b border-[var(--border)] ${theadBgCls}"><th class="py-1.5 px-2.5 text-center w-7">#</th><th class="py-1.5 px-2">${escapeAttr(entityLabel)}</th><th class="py-1.5 px-2.5 text-right">${escapeAttr(valHeader)}</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
       };
 
       const renderTopWorstComparisonCard = (
@@ -390,15 +398,18 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
         worst: TopWorstLineData
       ): string => {
         const entityPlural = top.dimension || 'Entities';
-        const entitySingular = entityPlural.replace(/s$/i, '').replace(/ies$/i, 'y');
+        const entitySingular = entityPlural.replace(/ies$/i, 'y').replace(/s$/i, '');
         const dateCtx = top.dateContext || worst.dateContext || '';
         const mainTitle = `Top ${top.items.length} vs Worst ${worst.items.length} ${entityPlural} ${dateCtx}`.trim();
 
         const topTable = renderSubTable(
           `Top ${top.items.length} ${entityPlural}`,
           'Highest',
-          'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300',
-          'border-emerald-500/30',
+          'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 border border-emerald-300/50',
+          'border-emerald-300 dark:border-emerald-700/60',
+          'bg-emerald-50/80 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60',
+          'bg-emerald-50/40 dark:bg-emerald-950/20',
+          'hover:bg-emerald-50/30 dark:hover:bg-emerald-950/30',
           'text-emerald-700 dark:text-emerald-400',
           entitySingular,
           'Sales Value',
@@ -408,8 +419,11 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
         const worstTable = renderSubTable(
           `Worst ${worst.items.length} ${entityPlural}`,
           'Lowest',
-          'bg-rose-500/15 text-rose-800 dark:text-rose-300',
-          'border-rose-500/30',
+          'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200 border border-rose-300/50',
+          'border-rose-300 dark:border-rose-700/60',
+          'bg-rose-50/80 dark:bg-rose-950/40 border-b border-rose-200 dark:border-rose-800/60',
+          'bg-rose-50/40 dark:bg-rose-950/20',
+          'hover:bg-rose-50/30 dark:hover:bg-rose-950/30',
           'text-rose-700 dark:text-rose-400',
           entitySingular,
           'Sales Value',
@@ -424,11 +438,22 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
         const isWorst = data.kind === 'worst';
         const badge = isDecline ? 'Decline Risk' : isWorst ? 'Lowest' : 'Highest';
         const badgeCls = isDecline || isWorst
-          ? 'bg-rose-500/15 text-rose-800 dark:text-rose-300'
-          : 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300';
-        const containerBorderCls = isDecline || isWorst ? 'border-rose-500/30' : 'border-emerald-500/30';
+          ? 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-200 border border-rose-300/50'
+          : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200 border border-emerald-300/50';
+        const containerBorderCls = isDecline || isWorst
+          ? 'border-rose-300 dark:border-rose-700/60'
+          : 'border-emerald-300 dark:border-emerald-700/60';
+        const headerBgCls = isDecline || isWorst
+          ? 'bg-rose-50/80 dark:bg-rose-950/40 border-b border-rose-200 dark:border-rose-800/60'
+          : 'bg-emerald-50/80 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800/60';
+        const theadBgCls = isDecline || isWorst
+          ? 'bg-rose-50/40 dark:bg-rose-950/20'
+          : 'bg-emerald-50/40 dark:bg-emerald-950/20';
+        const hoverBgCls = isDecline || isWorst
+          ? 'hover:bg-rose-50/30 dark:hover:bg-rose-950/30'
+          : 'hover:bg-emerald-50/30 dark:hover:bg-emerald-950/30';
         const valColorCls = isDecline || isWorst ? 'text-rose-700 dark:text-rose-400' : 'text-emerald-700 dark:text-emerald-400';
-        const entityLabel = data.dimension.replace(/s$/i, '').replace(/ies$/i, 'y') || 'Item';
+        const entityLabel = data.dimension.replace(/ies$/i, 'y').replace(/s$/i, '') || 'Item';
         const valHeader = isDecline ? 'Decline %' : 'Sales Value';
 
         const subTable = renderSubTable(
@@ -436,6 +461,9 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
           badge,
           badgeCls,
           containerBorderCls,
+          headerBgCls,
+          theadBgCls,
+          hoverBgCls,
           valColorCls,
           entityLabel,
           valHeader,
