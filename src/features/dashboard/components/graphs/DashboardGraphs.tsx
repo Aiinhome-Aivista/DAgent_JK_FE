@@ -18,7 +18,7 @@ import {
   Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { formatChatMessage, filterOutOntologyAndConclusion } from "../../../../utils/format";
+import { formatChatMessage, formatInlineMarkdown, filterOutOntologyAndConclusion } from "../../../../utils/format";
 
 import { YearComparisonChartDynamic } from "./YearComparisonChartDynamic";
 import { ZonePieChartDynamic } from "./ZonePieChartDynamic";
@@ -33,26 +33,6 @@ import { NonBilledAccountsCardDynamic } from "./NonBilledAccountsCardDynamic";
 import { OverduePieChartDynamic } from "./OverduePieChartDynamic";
 import { ExposureCardDynamic } from "./ExposureCardDynamic";
 import { DomesticSalesValueAchievementCard } from "./DomesticSalesValueAchievementCard";
-
-const formatInlineMarkdown = (text: string) => {
-  if (!text) return "";
-  // Escape HTML tags to prevent custom injected script tags, but allow our bolding
-  let escaped = text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
-
-  // Replace **text** with a bold tag matching theme primary text
-  escaped = escaped.replace(
-    /\*\*([^*]+)\*\*/g,
-    '<strong class="font-bold text-slate-900">$1</strong>',
-  );
-
-  // Replace *text* with an italic tag
-  escaped = escaped.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
-
-  return escaped;
-};
 
 const cleanParagraphText = (text: string) => {
   if (!text) return "";

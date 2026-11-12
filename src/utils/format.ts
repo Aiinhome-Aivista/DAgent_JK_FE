@@ -46,6 +46,71 @@ export const filterOutOntologyAndConclusion = (text: string): string => {
 };
 
 /**
+ * Safely formats inline Markdown (bold, italic, and optionally inline code & links)
+ * on text while preventing literal asterisks inside SKUs/identifiers (e.g. `E2_***_TL`)
+ * or unmatched asterisks on one line from corrupting subsequent lines.
+ */
+export const formatInlineMarkdown = (
+  text: string,
+  options?: {
+    strongClass?: string;
+    inlineCodeClass?: string;
+    linkClass?: string;
+    includeCodeAndLinks?: boolean;
+  }
+): string => {
+  if (!text) return '';
+  const strongClass = options?.strongClass ?? 'font-bold text-slate-900';
+  const includeCodeAndLinks = options?.includeCodeAndLinks ?? false;
+  const inlineCodeClass = options?.inlineCodeClass ?? '';
+  const linkClass = options?.linkClass ?? '';
+
+  const formatLine = (line: string): string => {
+    let html = line
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Inline code: protect asterisks inside code spans from bold/italic parsing
+    if (includeCodeAndLinks) {
+      html = html.replace(/`([^`]+)`/g, (_m, code) =>
+        `<code class="${inlineCodeClass}">${code.replace(/\*/g, '&#42;')}</code>`
+      );
+    }
+
+    // Escape literal asterisks inside identifiers/SKUs (e.g., 14.00R25_ZCB5_E2_***_TL or a*b)
+    html = html.replace(/([A-Za-z0-9_])(\*+)(?=[A-Za-z0-9_])/g, (_m, prefix, stars) =>
+      prefix + '&#42;'.repeat(stars.length)
+    );
+    html = html.replace(/_(\*{3,})/g, (_m, stars) => '_' + '&#42;'.repeat(stars.length));
+
+    // Markdown links (protect asterisks inside href before bold/italic parsing)
+    if (includeCodeAndLinks) {
+      const linkSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline shrink-0 opacity-80"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>`;
+      html = html.replace(
+        /\[([^\]]+)\]\(([^)]+)\)/g,
+        (_m, label, url) =>
+          `<a href="${url.replace(/\*/g, '%2A')}" target="_blank" rel="noopener noreferrer" class="${linkClass}">${label} ${linkSvg}</a>`
+      );
+    }
+
+    // Bold & italic text (single-line and non-whitespace-bounded to prevent stray * bleeding)
+    html = html.replace(
+      /\*\*([^\s*](?:[^*\n]*?[^\s*])?)\*\*/g,
+      `<strong class="${strongClass}">$1</strong>`
+    );
+    html = html.replace(
+      /\*([^\s*](?:[^*\n]*?[^\s*])?)\*/g,
+      '<em class="italic">$1</em>'
+    );
+
+    return html;
+  };
+
+  return text.split('\n').map(formatLine).join('\n');
+};
+
+/**
  * Formats a chat message string supporting a subset of Markdown:
  * - Code blocks (with language header)
  * - Inline code
@@ -83,6 +148,14 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
 
   const headerClass = isAssistant ? 'text-[var(--text-primary)] font-bold' : 'text-white font-bold';
 
+  const formatInline = (lineText: string): string =>
+    formatInlineMarkdown(lineText, {
+      strongClass: 'font-semibold',
+      inlineCodeClass,
+      linkClass,
+      includeCodeAndLinks: true,
+    });
+
   // 1. Split code blocks to preserve code content formatting and avoid nested parsing
   const parts = text.split(/(```[\s\S]*?```)/g);
 
@@ -105,56 +178,51 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
           : ''
       }<code>${escapedCode.trim()}</code></pre>`;
     } else {
-      let html = part;
-
-      // Escape raw HTML blocks to protect against XSS
-      html = html
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-
-      // Inline code
-      html = html.replace(/`([^`]+)`/g, `<code class="${inlineCodeClass}">$1</code>`);
-
-      // Bold text
-      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong class="font-semibold">$1</strong>');
-
-      // Italic text
-      html = html.replace(/\*([^*]+)\*/g, '<em class="italic">$1</em>');
-
-      // Markdown links with small external indicator
-      const linkSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="inline shrink-0 opacity-80"><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path></svg>`;
-      html = html.replace(
-        /\[([^\]]+)\]\(([^)]+)\)/g,
-        `<a href="$2" target="_blank" rel="noopener noreferrer" class="${linkClass}">$1 ${linkSvg}</a>`
-      );
-
-      // Headers: #, ##, ###, ####
-      html = html.replace(/^#### (.*$)/gim, `<h4 class="text-sm font-bold text-slate-800 mt-3 mb-1.5 ${headerClass}">$1</h4>`);
-      html = html.replace(/^### (.*$)/gim, `<h4 class="text-sm mt-3 mb-1.5 ${headerClass}">$1</h4>`);
-      html = html.replace(/^## (.*$)/gim, `<h3 class="text-base mt-4 mb-2 ${headerClass}">$1</h3>`);
-      html = html.replace(/^# (.*$)/gim, `<h2 class="text-lg mt-5 mb-2.5 ${headerClass}">$1</h2>`);
-
-      // Handle lists and paragraphs line by line
-      const lines = html.split('\n');
+      // Handle headers, lists, and paragraphs line by line so inline formatting never spans across lines
+      const lines = part.split('\n');
       let resultHtml = '';
       let inList = false;
       let inOrderedList = false;
+
+      const closeLists = () => {
+        if (inList) {
+          resultHtml += `</ul>`;
+          inList = false;
+        }
+        if (inOrderedList) {
+          resultHtml += `</ol>`;
+          inOrderedList = false;
+        }
+      };
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
         const trimmed = line.trim();
 
-        const isBullet = trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• ');
-        const isNumbered = /^\d+\.\s/.test(trimmed);
+        const headerMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
+        const isBullet = !headerMatch && (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• '));
+        const isNumbered = !headerMatch && !isBullet && /^\d+\.\s/.test(trimmed);
 
-        if (isBullet) {
+        if (headerMatch) {
+          closeLists();
+          const level = headerMatch[1].length;
+          const headerContent = formatInline(headerMatch[2]);
+          if (level === 4) {
+            resultHtml += `<h4 class="text-sm font-bold text-slate-800 mt-3 mb-1.5 ${headerClass}">${headerContent}</h4>`;
+          } else if (level === 3) {
+            resultHtml += `<h4 class="text-sm mt-3 mb-1.5 ${headerClass}">${headerContent}</h4>`;
+          } else if (level === 2) {
+            resultHtml += `<h3 class="text-base mt-4 mb-2 ${headerClass}">${headerContent}</h3>`;
+          } else {
+            resultHtml += `<h2 class="text-lg mt-5 mb-2.5 ${headerClass}">${headerContent}</h2>`;
+          }
+        } else if (isBullet) {
           if (inOrderedList) {
             resultHtml += `</ol>`;
             inOrderedList = false;
           }
 
-          const itemContent = trimmed.replace(/^[-*•]\s+/, '');
+          const itemContent = formatInline(trimmed.replace(/^[-*•]\s+/, ''));
           const isCategorySubheader =
             /(?:Breakdown|Top SKUs|SKUs by Category|by Category)<\/strong>:\s*$/i.test(itemContent) ||
             /^(?:Account Group Breakdown|Top SKUs by Category)/i.test(itemContent.replace(/<[^>]+>/g, '').trim()) && itemContent.trim().endsWith(':');
@@ -181,33 +249,20 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
             resultHtml += `<ol class="list-decimal pl-5 my-2 space-y-1">`;
             inOrderedList = true;
           }
-          const itemContent = trimmed.replace(/^\d+\.\s+/, '');
+          const itemContent = formatInline(trimmed.replace(/^\d+\.\s+/, ''));
           resultHtml += `<li>${itemContent}</li>`;
         } else {
-          if (inList) {
-            resultHtml += `</ul>`;
-            inList = false;
-          }
-          if (inOrderedList) {
-            resultHtml += `</ol>`;
-            inOrderedList = false;
-          }
+          closeLists();
 
           if (trimmed === '') {
             resultHtml += `<div class="h-2"></div>`;
           } else {
-            // Check if line is a header HTML tag we generated
-            if (trimmed.startsWith('<h2') || trimmed.startsWith('<h3') || trimmed.startsWith('<h4') || trimmed.startsWith('<h5')) {
-              resultHtml += trimmed;
-            } else {
-              resultHtml += `<p class="mb-1.5 last:mb-0 leading-relaxed">${trimmed}</p>`;
-            }
+            resultHtml += `<p class="mb-1.5 last:mb-0 leading-relaxed">${formatInline(trimmed)}</p>`;
           }
         }
       }
 
-      if (inList) resultHtml += `</ul>`;
-      if (inOrderedList) resultHtml += `</ol>`;
+      closeLists();
 
       return resultHtml;
     }
