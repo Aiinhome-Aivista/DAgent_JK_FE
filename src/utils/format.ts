@@ -236,6 +236,77 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
         );
       };
 
+      const parseSkuCategories = (startIdx: number): { categories: Array<{ category: string; skus: Array<{ name: string; value: string }> }>; endIdx: number } => {
+        const categories: Array<{ category: string; skus: Array<{ name: string; value: string }> }> = [];
+        let idx = startIdx;
+        // Skip optional single blank line between title and first category bullet
+        while (idx < lines.length && lines[idx].trim() === '') {
+          idx++;
+        }
+        let lastMatched = startIdx - 1;
+        while (idx < lines.length) {
+          const t = lines[idx].trim();
+          if (!(t.startsWith('- ') || t.startsWith('* ') || t.startsWith('• '))) {
+            break;
+          }
+          const raw = t.replace(/^[-*•]\s+/, '');
+          const catMatch = raw.match(/^\*{0,2}([^:*]+?)\*{0,2}\s*:\s*(.+)$/);
+          if (!catMatch) {
+            break;
+          }
+          const category = catMatch[1].trim();
+          const skusRaw = catMatch[2].trim();
+          const skus: Array<{ name: string; value: string }> = [];
+          const skuRegex = /(.+?)\s*\((?:Sales\s*Value:\s*)?(₹\s*-?[\d,]+(?:\.\d+)?\s*Cr)\)(?:\s*,\s*|$)/gi;
+          let m: RegExpExecArray | null;
+          while ((m = skuRegex.exec(skusRaw)) !== null) {
+            skus.push({ name: m[1].trim(), value: m[2].trim() });
+          }
+          if (skus.length === 0) {
+            break;
+          }
+          categories.push({ category, skus });
+          lastMatched = idx;
+          idx++;
+        }
+        return { categories, endIdx: lastMatched };
+      };
+
+      const renderTopSkusTabbedCard = (
+        titleText: string,
+        categories: Array<{ category: string; skus: Array<{ name: string; value: string }> }>
+      ): string => {
+        const cleanTitle = escapeAttr(titleText.replace(/[:*]+$/, '').trim());
+        const activeTabCls = 'bg-[var(--accent)] text-white border-[var(--accent)] shadow-xs';
+        const inactiveTabCls = 'bg-[var(--surface-hover)] text-[var(--text-secondary)] border-[var(--border)] hover:text-[var(--text-primary)] hover:border-slate-300';
+
+        const tabsHtml = categories
+          .map((cat, idx) => {
+            const cls = idx === 0 ? activeTabCls : inactiveTabCls;
+            const catEsc = escapeAttr(cat.category);
+            return `<button type="button" class="sku-tab-btn px-3 py-1 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${cls}" data-sku-tab="${idx}">${catEsc}</button>`;
+          })
+          .join('');
+
+        const panelsHtml = categories
+          .map((cat, idx) => {
+            const catEsc = escapeAttr(cat.category);
+            const rowsHtml = cat.skus
+              .map((sku, sIdx) => {
+                const nameEsc = escapeAttr(sku.name);
+                const valEsc = escapeAttr(sku.value);
+                const borderCls = sIdx < cat.skus.length - 1 ? 'border-b border-[var(--border)]/60' : '';
+                return `<div class="flex items-center justify-between gap-4 py-2 ${borderCls}"><div class="flex items-center gap-2.5 min-w-0"><span class="text-xs font-medium text-[var(--text-secondary)] w-4 shrink-0">${sIdx + 1}.</span><span class="text-xs sm:text-sm font-medium text-[var(--accent)] truncate" title="${nameEsc}">${nameEsc}</span></div><span class="text-xs sm:text-sm whitespace-nowrap shrink-0"><span class="font-semibold text-[var(--text-primary)] mr-1">Sales Value:</span><span class="font-normal text-[var(--text-primary)]">${valEsc}</span></span></div>`;
+              })
+              .join('');
+
+            return `<div class="sku-tab-panel ${idx === 0 ? '' : 'hidden'} pt-3" data-sku-panel="${idx}"><div class="flex items-center justify-between mb-1.5"><span class="text-xs font-bold text-[var(--text-primary)]">${catEsc} Materials</span><span class="text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--text-secondary)]">Top ${cat.skus.length}</span></div><div>${rowsHtml}</div></div>`;
+          })
+          .join('');
+
+        return `<div class="sku-tabs-card my-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-xs"><div class="flex items-center justify-between gap-2 mb-3"><h4 class="text-sm font-bold text-[var(--text-primary)] m-0 whitespace-nowrap overflow-x-auto">${cleanTitle}</h4></div><div class="flex flex-wrap gap-1.5 pb-3 border-b border-[var(--border)]">${tabsHtml}</div>${panelsHtml}</div>`;
+      };
+
       const closeLists = () => {
         if (inList) {
           resultHtml += `</ul>`;
@@ -254,6 +325,20 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
         const headerMatch = trimmed.match(/^(#{1,4})\s+(.*)$/);
         const isBullet = !headerMatch && (trimmed.startsWith('- ') || trimmed.startsWith('* ') || trimmed.startsWith('• '));
         const isNumbered = !headerMatch && !isBullet && /^\d+\.\s/.test(trimmed);
+
+        // Detect "Top 5 SKUs by Top 5 Categories (...)" or "Top SKUs by Category (...)" block and render interactive tabbed card
+        const candidateTitle = (headerMatch ? headerMatch[2] : trimmed.replace(/^[-*•]\s+/, '')).replace(/\*/g, '').replace(/:$/, '').trim();
+        if (/^Top\s*(?:\d+\s+)?SKUs\s+by\s+/i.test(candidateTitle) && !candidateTitle.includes('Cr)')) {
+          const { categories, endIdx } = parseSkuCategories(i + 1);
+          if (categories.length > 0) {
+            closeLists();
+            inAccountGroupSection = false;
+            inChurnSection = false;
+            resultHtml += renderTopSkusTabbedCard(candidateTitle, categories);
+            i = endIdx;
+            continue;
+          }
+        }
 
         if (headerMatch) {
           closeLists();
@@ -354,6 +439,38 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
  */
 export const handleAccountGroupViewClick = (e: { target: EventTarget | null }) => {
   const target = e.target as HTMLElement | null;
+
+  // Handle Top SKUs category tab switching
+  const tabBtn = target?.closest?.('.sku-tab-btn') as HTMLElement | null;
+  if (tabBtn) {
+    const card = tabBtn.closest('.sku-tabs-card');
+    const selectedTab = tabBtn.getAttribute('data-sku-tab');
+    if (card && selectedTab !== null) {
+      const activeClasses = ['bg-[var(--accent)]', 'text-white', 'border-[var(--accent)]', 'shadow-xs'];
+      const inactiveClasses = ['bg-[var(--surface-hover)]', 'text-[var(--text-secondary)]', 'border-[var(--border)]', 'hover:text-[var(--text-primary)]', 'hover:border-slate-300'];
+
+      card.querySelectorAll('.sku-tab-btn').forEach((btn) => {
+        const isSelected = btn.getAttribute('data-sku-tab') === selectedTab;
+        if (isSelected) {
+          btn.classList.remove(...inactiveClasses);
+          btn.classList.add(...activeClasses);
+        } else {
+          btn.classList.remove(...activeClasses);
+          btn.classList.add(...inactiveClasses);
+        }
+      });
+
+      card.querySelectorAll('.sku-tab-panel').forEach((panel) => {
+        if (panel.getAttribute('data-sku-panel') === selectedTab) {
+          panel.classList.remove('hidden');
+        } else {
+          panel.classList.add('hidden');
+        }
+      });
+    }
+    return;
+  }
+
   const btn = target?.closest?.('.view-account-group-btn') as HTMLElement | null;
   if (!btn) return;
 
