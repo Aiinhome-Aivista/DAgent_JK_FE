@@ -134,10 +134,10 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
 
 
   // Tailored classes based on message owner/theme to ensure high-end aesthetics
-  const linkClass = isAssistant 
-    ? 'text-[var(--accent)] hover:underline inline-flex items-center gap-1 font-medium break-all' 
+  const linkClass = isAssistant
+    ? 'text-[var(--accent)] hover:underline inline-flex items-center gap-1 font-medium break-all'
     : 'text-white underline hover:opacity-90 inline-flex items-center gap-1 font-semibold break-all';
-    
+
   const inlineCodeClass = isAssistant
     ? 'bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--accent)] font-mono text-[12px] px-1.5 py-0.5 rounded transition-colors'
     : 'bg-white/20 border border-white/10 text-white font-mono text-[12px] px-1.5 py-0.5 rounded';
@@ -164,7 +164,7 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
       const match = part.match(/```(\w*)\n([\s\S]*?)```/);
       const language = match ? match[1] : '';
       const codeContent = match ? match[2] : part.slice(3, -3);
-      
+
       const escapedCode = codeContent
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
@@ -172,17 +172,69 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 
-      return `<pre class="${codeBlockClass}">${
-        language 
-          ? `<div class="text-[9px] text-[var(--text-secondary)] mb-1.5 font-sans uppercase tracking-wider font-semibold border-b border-[var(--border)] pb-1">${language}</div>` 
+      return `<pre class="${codeBlockClass}">${language
+          ? `<div class="text-[9px] text-[var(--text-secondary)] mb-1.5 font-sans uppercase tracking-wider font-semibold border-b border-[var(--border)] pb-1">${language}</div>`
           : ''
-      }<code>${escapedCode.trim()}</code></pre>`;
+        }<code>${escapedCode.trim()}</code></pre>`;
     } else {
       // Handle headers, lists, and paragraphs line by line so inline formatting never spans across lines
       const lines = part.split('\n');
       let resultHtml = '';
       let inList = false;
       let inOrderedList = false;
+      let inAccountGroupSection = false;
+      let inChurnSection = false;
+      let accountGroupDateRange = '';
+
+      const escapeAttr = (val: string) =>
+        val
+          .replace(/&/g, '&amp;')
+          .replace(/"/g, '&quot;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+
+      const updateSectionContext = (rawTitle: string) => {
+        const plainTitle = rawTitle.replace(/\*/g, '').trim();
+        if (/account\s+group\s+breakdown/i.test(plainTitle)) {
+          inAccountGroupSection = true;
+          inChurnSection = false;
+          const rangeMatch = plainTitle.match(/\((?:KTOKD\s*:\s*)?([^)]+)\)/i);
+          accountGroupDateRange = rangeMatch ? rangeMatch[1].trim() : '';
+        } else if (/customer\s+churn\s*&\s*inactivity\s+risk/i.test(plainTitle)) {
+          inAccountGroupSection = false;
+          inChurnSection = true;
+        } else {
+          inAccountGroupSection = false;
+          inChurnSection = false;
+        }
+      };
+
+      const CHURN_QUESTION_MAP: Array<[RegExp, string]> = [
+        [
+          /^Accounts\s+with\s+>\s*5%\s+Sales\s+Decline$/i,
+          'List all accounts with more than 5% sales decline in the last 30 days compared to the prior 30 days with customer code, customer name, current 30d sales value, previous 30d sales value, and decline percentage',
+        ],
+        [
+          /^Accounts\s+with\s+>\s*10%\s+Sales\s+Decline$/i,
+          'List all accounts with more than 10% sales decline in the last 30 days compared to the prior 30 days with customer code, customer name, current 30d sales value, previous 30d sales value, and decline percentage',
+        ],
+        [
+          /^High-Risk\s+Inactive\s+Accounts/i,
+          'List all high-risk inactive accounts with zero billing in the last 30 days and historical billing of 2 lakh or more with customer code, customer name, and total historical sales value',
+        ],
+        [
+          /^Zero-Sale\s+Active\s+Counters$/i,
+          'List all zero-sale active counters with zero tyre units sold in the last 30 days and positive historical units sold with customer code, customer name, and total historical units sold',
+        ],
+      ];
+
+      const wrapLabelAsLink = (htmlItem: string, question: string): string => {
+        const linkAttrs = `type="button" class="view-account-group-btn text-[var(--accent)] hover:text-[var(--accent-hover)] underline decoration-[var(--accent)]/60 hover:decoration-[var(--accent-hover)] underline-offset-2 font-semibold cursor-pointer transition-colors text-left" data-rag-question="${escapeAttr(question)}" title="Click here to know more"`;
+        return htmlItem.replace(
+          /^(?:<strong class="font-semibold">)?([^<]+?)(?:<\/strong>)?(?=\s*:)/,
+          `<button ${linkAttrs}>$1</button>`
+        );
+      };
 
       const closeLists = () => {
         if (inList) {
@@ -205,6 +257,7 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
 
         if (headerMatch) {
           closeLists();
+          updateSectionContext(headerMatch[2]);
           const level = headerMatch[1].length;
           const headerContent = formatInline(headerMatch[2]);
           if (level === 4) {
@@ -222,7 +275,8 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
             inOrderedList = false;
           }
 
-          const itemContent = formatInline(trimmed.replace(/^[-*•]\s+/, ''));
+          const rawBullet = trimmed.replace(/^[-*•]\s+/, '');
+          let itemContent = formatInline(rawBullet);
           const isCategorySubheader =
             /(?:Breakdown|Top SKUs|SKUs by Category|by Category)<\/strong>:\s*$/i.test(itemContent) ||
             /^(?:Account Group Breakdown|Top SKUs by Category|Top 5 SKUs)/i.test(itemContent.replace(/<[^>]+>/g, '').trim()) && itemContent.trim().endsWith(':');
@@ -232,15 +286,37 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
               resultHtml += `</ul>`;
               inList = false;
             }
+            updateSectionContext(rawBullet);
             resultHtml += `<div class="font-bold text-slate-800 mt-3 mb-1 text-sm">${itemContent}</div>`;
           } else {
             if (!inList) {
               resultHtml += `<ul class="list-disc pl-5 my-2 space-y-1">`;
               inList = true;
             }
+            if (inAccountGroupSection && /active\s+customer/i.test(rawBullet)) {
+              const grpMatch = rawBullet.match(/^\*{0,2}([^(*]+?)\s*\(([A-Za-z0-9_]+)\)\*{0,2}\s*:/);
+              if (grpMatch) {
+                const groupName = grpMatch[1].trim();
+                const groupCode = grpMatch[2].trim();
+                const dateClause = accountGroupDateRange ? ` for ${accountGroupDateRange}` : '';
+                const question = `List all active customers in Account Group ${groupName} (${groupCode})${dateClause} with customer code, customer name, sales value, and units sold`;
+                itemContent = wrapLabelAsLink(itemContent, question);
+              }
+            } else if (inChurnSection) {
+              const labelMatch = rawBullet.match(/^\*{0,2}([^:*]+(?:\([^)]+\))?)\*{0,2}\s*:/);
+              if (labelMatch) {
+                const rawLabel = labelMatch[1].trim();
+                const matchedEntry = CHURN_QUESTION_MAP.find(([pattern]) => pattern.test(rawLabel));
+                if (matchedEntry) {
+                  itemContent = wrapLabelAsLink(itemContent, matchedEntry[1]);
+                }
+              }
+            }
             resultHtml += `<li>${itemContent}</li>`;
           }
         } else if (isNumbered) {
+          inAccountGroupSection = false;
+          inChurnSection = false;
           if (inList) {
             resultHtml += `</ul>`;
             inList = false;
@@ -253,10 +329,12 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
           resultHtml += `<li>${itemContent}</li>`;
         } else {
           closeLists();
+          inAccountGroupSection = false;
 
           if (trimmed === '') {
             resultHtml += `<div class="h-2"></div>`;
           } else {
+            updateSectionContext(trimmed);
             resultHtml += `<p class="mb-1.5 last:mb-0 leading-relaxed">${formatInline(trimmed)}</p>`;
           }
         }
@@ -267,4 +345,31 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
       return resultHtml;
     }
   }).join('');
+};
+
+/**
+ * Delegated click handler for interactive summary links (Account Group Breakdown & Churn Risk).
+ * Extracts the pre-built RAG question from `data-rag-question` (or legacy group attributes)
+ * and dispatches a `rag-chat-ask` custom event for ChatWindow to execute.
+ */
+export const handleAccountGroupViewClick = (e: { target: EventTarget | null }) => {
+  const target = e.target as HTMLElement | null;
+  const btn = target?.closest?.('.view-account-group-btn') as HTMLElement | null;
+  if (!btn) return;
+
+  const directQuestion = btn.getAttribute('data-rag-question')?.trim();
+  if (directQuestion) {
+    window.dispatchEvent(new CustomEvent('rag-chat-ask', { detail: { question: directQuestion } }));
+    return;
+  }
+
+  const groupCode = btn.getAttribute('data-group-code') || '';
+  const groupName = btn.getAttribute('data-group-name') || '';
+  const dateRange = btn.getAttribute('data-date-range') || '';
+  if (!groupCode) return;
+
+  const dateClause = dateRange ? ` for ${dateRange}` : '';
+  const question = `List all active customers in Account Group ${groupName} (${groupCode})${dateClause} with customer code, customer name, sales value, and units sold`;
+
+  window.dispatchEvent(new CustomEvent('rag-chat-ask', { detail: { question } }));
 };

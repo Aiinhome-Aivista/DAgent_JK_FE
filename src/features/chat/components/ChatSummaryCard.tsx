@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Sparkles, ChevronUp } from 'lucide-react';
-import { formatChatMessage } from '../../../utils/format';
+import { formatChatMessage, handleAccountGroupViewClick } from '../../../utils/format';
 import { motion } from 'motion/react';
 
 export const ChatSummaryCard = ({ title, content, isLoading }: { title?: string, content?: string, isLoading?: boolean }) => {
   const [expanded, setExpanded] = useState(false);
-  
+
   if (isLoading) {
     return (
       <div className="bg-white px-5 py-4 rounded-2xl border border-slate-200 border-l-4 border-l-[#5B5EFC]/50 shadow-sm flex flex-col gap-3 relative overflow-hidden mb-6 animate-pulse">
@@ -29,9 +29,9 @@ export const ChatSummaryCard = ({ title, content, isLoading }: { title?: string,
   }
 
   if (!title && !content) return null;
-  
+
   const isLongContent = content && content.length > 400;
-  
+
   return (
     <div className="bg-white px-5 py-3 rounded-2xl border border-slate-200 border-l-4 border-l-[#5B5EFC] shadow-sm flex flex-col gap-2 relative overflow-hidden transition-all duration-300 hover:shadow-md mb-6">
       <div className="flex items-center justify-between gap-4">
@@ -50,16 +50,16 @@ export const ChatSummaryCard = ({ title, content, isLoading }: { title?: string,
           {content && (
             !expanded ? (
               <div className="flex flex-col items-end gap-2">
-                <div 
+                <div
                   className="text-slate-600 text-sm leading-relaxed font-normal flex-1 prose-chat break-words w-full relative max-h-32 overflow-hidden"
                 >
-                  <div dangerouslySetInnerHTML={{ __html: formatChatMessage(content, true) }} />
+                  <div onClick={handleAccountGroupViewClick} dangerouslySetInnerHTML={{ __html: formatChatMessage(content, true) }} />
                   {isLongContent && (
                     <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-white to-transparent pointer-events-none" />
                   )}
                 </div>
                 {isLongContent && (
-                  <button 
+                  <button
                     onClick={() => setExpanded(true)}
                     className="shrink-0 flex items-center gap-1 text-xs font-semibold text-[#5B5EFC] hover:text-[#4A4DE0] transition-colors cursor-pointer focus:outline-none bg-white"
                   >
@@ -74,11 +74,12 @@ export const ChatSummaryCard = ({ title, content, isLoading }: { title?: string,
                 transition={{ duration: 0.2 }}
                 className="flex flex-col gap-4"
               >
-                <div 
+                <div
+                  onClick={handleAccountGroupViewClick}
                   className="flex flex-col gap-2 text-slate-600 text-sm leading-relaxed font-normal prose-chat break-words"
-                  dangerouslySetInnerHTML={{ __html: formatChatMessage(content, true) }} 
+                  dangerouslySetInnerHTML={{ __html: formatChatMessage(content, true) }}
                 />
-                <button 
+                <button
                   onClick={() => setExpanded(false)}
                   className="flex items-center gap-1 text-xs font-semibold text-[#5B5EFC] hover:text-[#4A4DE0] transition-colors self-end mt-2 cursor-pointer focus:outline-none"
                 >

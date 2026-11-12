@@ -18,7 +18,7 @@ import {
   Clock,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { formatChatMessage, formatInlineMarkdown, filterOutOntologyAndConclusion } from "../../../../utils/format";
+import { formatChatMessage, formatInlineMarkdown, filterOutOntologyAndConclusion, handleAccountGroupViewClick } from "../../../../utils/format";
 
 import { YearComparisonChartDynamic } from "./YearComparisonChartDynamic";
 import { ZonePieChartDynamic } from "./ZonePieChartDynamic";
@@ -529,6 +529,7 @@ const SummaryCard = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean })
                     </span>
                   </div>
                   <div
+                    onClick={handleAccountGroupViewClick}
                     className="flex flex-col gap-2 mt-1.5 pl-1 text-slate-800 text-sm leading-relaxed font-normal"
                     dangerouslySetInnerHTML={{
                       __html: formatChatMessage(keyInsights.join("\n"), true)
