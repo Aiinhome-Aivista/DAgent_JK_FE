@@ -212,19 +212,23 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
       const CHURN_QUESTION_MAP: Array<[RegExp, string]> = [
         [
           /^Accounts\s+with\s+>\s*5%\s+Sales\s+Decline$/i,
-          'List all accounts with more than 5% sales decline in the last 30 days compared to the prior 30 days with customer code, customer name, current 30d sales value, previous 30d sales value, and decline percentage',
+          'Accounts with > 5% Sales Decline (Last 30 Days)',
         ],
         [
           /^Accounts\s+with\s+>\s*10%\s+Sales\s+Decline$/i,
-          'List all accounts with more than 10% sales decline in the last 30 days compared to the prior 30 days with customer code, customer name, current 30d sales value, previous 30d sales value, and decline percentage',
+          'Accounts with > 10% Sales Decline (Last 30 Days)',
+        ],
+        [
+          /^Steepest\s+Sales\s+Decline\s+Accounts/i,
+          'Steepest Sales Decline Accounts (Last 30 Days)',
         ],
         [
           /^High-Risk\s+Inactive\s+Accounts/i,
-          'List all high-risk inactive accounts with zero billing in the last 30 days and historical billing of 2 lakh or more with customer code, customer name, and total historical sales value',
+          'High-Risk Inactive Accounts (Last 30 Days)',
         ],
         [
           /^Zero-Sale\s+Active\s+Counters$/i,
-          'List all zero-sale active counters with zero tyre units sold in the last 30 days and positive historical units sold with customer code, customer name, and total historical units sold',
+          'Zero-Sale Active Counters (Last 30 Days)',
         ],
       ];
 
