@@ -380,9 +380,9 @@ export const formatChatMessage = (text: string, isAssistant: boolean): string =>
           .map((it, idx) => {
             const nameEsc = escapeAttr(it.name);
             let valText = it.value;
-            // If sales value was rounded to 0 Cr for small positive transactions, display cleanly as < ₹0.01 Cr
-            if (/^₹?\s*0(?:\.00?)?\s*Cr$/i.test(valText.trim())) {
-              valText = '< ₹0.01 Cr';
+            // Clean up any legacy '< ₹0.01 Cr' or '₹0 Cr' display so it doesn't show inconsistent '<' sign
+            if (/^<\s*₹?\s*0(?:\.01)?\s*Cr$/i.test(valText.trim()) || /^₹?\s*0(?:\.00?)?\s*Cr$/i.test(valText.trim())) {
+              valText = '₹0.01 Cr';
             }
             const valEsc = escapeAttr(valText);
             const borderCls = idx < items.length - 1 ? 'border-b border-[var(--border)]/50' : '';
