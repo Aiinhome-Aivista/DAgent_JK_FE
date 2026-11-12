@@ -90,7 +90,8 @@ export const scheduleService = {
             { id: '6', name: 'Overdue% (As On Date)' },
             { id: '7', name: 'Exposure %' },
             { id: '8', name: 'Sales Revenue' },
-            { id: '9', name: 'Domestic Sales Excel Report' }
+            { id: '9', name: 'Domestic Sales Excel Report' },
+            { id: '10', name: 'Key Metrics' }
         ];
     }
 };
