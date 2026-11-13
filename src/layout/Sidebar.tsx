@@ -756,7 +756,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                               filteredSessions.map(
                                                  (session, idx) => {
                                                    const isSelected = workspace.id === selectedWorkspace?.id && (
-                                                     (activeSessionName ? session.querySessionName === activeSessionName : (activeVisitNumber && session.querySessionId && activeVisitNumber === String(session.querySessionId).replace("session_visit_", "").trim()))
+                                                     activeVisitNumber && session.querySessionId
+                                                       ? activeVisitNumber === String(session.querySessionId).replace("session_visit_", "").trim()
+                                                       : Boolean(activeSessionName && session.querySessionName === activeSessionName)
                                                    );
                                                    return (
                                                   <div
