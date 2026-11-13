@@ -345,7 +345,7 @@ export const TopBottomPerformanceChart = () => {
       {/* Inside the Container: Two side-by-side cards */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {renderSection(`Top 10 ${dimension}`, topData, true)}
-        {renderSection(`Bottom 10 ${dimension}`, bottomData, false)}
+        {renderSection(`Worst 10 ${dimension}`, bottomData, false)}
       </div>
     </div>
   );
