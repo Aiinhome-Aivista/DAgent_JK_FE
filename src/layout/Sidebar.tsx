@@ -837,7 +837,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                                         {session.querySessionName}
                                                       </div>
                                                     </div>
-                                                    {roleId === 4 && session.userId && session.userId !== userId && (
+                                                    {roleId === 4 && session.userId && session.userId !== userId && !session.querySessionName?.trim().toLowerCase().startsWith("default") && (
                                                       <div className="text-[9px] font-medium text-[var(--text-secondary)] bg-[var(--bg)] px-1.5 py-0.5 rounded-sm border border-[var(--border)] shrink-0 max-w-[60px] truncate" title={session.userName || "User"}>
                                                         {session.userName || "User"}
                                                       </div>

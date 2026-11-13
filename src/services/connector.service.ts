@@ -111,8 +111,9 @@ class ConnectorService implements IConnectorService {
     return this.api.get(`${API_ENDPOINTS.IMPORT.SESSION_SOURCES}?session_id=${sessionId}`);
   }
 
-  async processSessionAnalysis(payload: { session_id: string; topics?: string[]; databases?: string[] }): Promise<any> {
-    return this.api.post(API_ENDPOINTS.IMPORT.SESSION_ANALYSIS, payload);
+  async processSessionAnalysis(payload: { session_id: string; topics?: string[]; databases?: string[]; user_id?: number | string | null }): Promise<any> {
+    const effectiveUserId = payload.user_id ?? Number(localStorage.getItem('DAgent_user_id')) ?? null;
+    return this.api.post(API_ENDPOINTS.IMPORT.SESSION_ANALYSIS, { ...payload, user_id: effectiveUserId });
   }
 
   async sendSessionChat(
