@@ -30,10 +30,10 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
   const [isTyreLoading, setIsTyreLoading] = useState(true);
   const [tyreAxisLabels, setTyreAxisLabels] = useState({
     x: "Sales (₹)",
-    y: "Tyre Type",
+    y: "Category",
   });
   const [tyreChartTitle, setTyreChartTitle] = useState(
-    "Top 10 Tyre Types by Sales",
+    "Top 10 Categories by Sales",
   );
 
   const [tyreYear, setTyreYear] = useState("ALL");
@@ -78,7 +78,7 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               session_id: sessionId,
-              question: "Top 10 Tyre Types by Sales ",
+              question: "Top 10 Categories by Sales",
               user_id: userId,
               year: !tyreYear || tyreYear.toUpperCase() === "ALL" ? ["ALL"] : (isNaN(Number(tyreYear)) ? [tyreYear] : [Number(tyreYear)]),
               customer_category: [tyreCustomerCategory],
@@ -122,9 +122,21 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
           };
           let xLabel = formatLabel(viz.xKey) || "Sales Value";
           if (xLabel === "Sales Value") xLabel += " (₹)";
-          let yLabel = formatLabel(viz.yKey) || "Tyre Type";
+          let yLabel = formatLabel(viz.yKey) || "Category";
+          if (yLabel === "Vehicle Type" || yLabel === "Tyre Type" || yLabel.toLowerCase().includes("tyre")) {
+            yLabel = "Category";
+          }
           setTyreAxisLabels({ x: xLabel, y: yLabel });
-          if (viz.title) setTyreChartTitle(viz.title);
+          if (viz.title) {
+            const updatedTitle = viz.title
+              .replace(/Top 10 Tyre Types by Sales/gi, "Top 10 Categories by Sales")
+              .replace(/Top 10 Tyre Type by Sales/gi, "Top 10 Categories by Sales")
+              .replace(/Tyre Types/gi, "Categories")
+              .replace(/Tyre Type/gi, "Category");
+            setTyreChartTitle(updatedTitle);
+          } else {
+            setTyreChartTitle("Top 10 Categories by Sales");
+          }
 
           setTyreData(mappedData);
         }
