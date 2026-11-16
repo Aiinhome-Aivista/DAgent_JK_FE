@@ -602,9 +602,9 @@ export const DashboardKPIs = () => {
 
         {/* Dropdown Popover */}
         {isCalendarOpen && (
-          <div className="absolute top-full right-0 w-[240px] max-w-[calc(100vw-2rem)] mt-1.5 z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 text-slate-700 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute top-full left-0 right-0 w-full mt-1.5 z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-2 text-slate-700 flex flex-col gap-2 animate-in fade-in zoom-in-95 duration-100">
             {/* Mode Switcher */}
-            <div className="flex items-center p-0.5 bg-slate-100 rounded-lg text-[11px] font-semibold text-slate-600">
+            <div className="flex items-center p-0.5 bg-slate-100 rounded-lg text-[10px] font-semibold text-slate-600">
               <button
                 type="button"
                 onClick={() => setFilterMode("month")}
@@ -674,7 +674,7 @@ export const DashboardKPIs = () => {
                           key={q.name}
                           type="button"
                           onClick={() => handleSelectQuarter(q.months, q.name)}
-                          className={`py-1 text-[11px] font-semibold rounded-md border text-center transition-all cursor-pointer ${
+                          className={`py-1 text-[10px] font-semibold rounded-md border text-center transition-all cursor-pointer ${
                             isQActive
                               ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
                               : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
@@ -712,7 +712,7 @@ export const DashboardKPIs = () => {
                           key={m.num}
                           type="button"
                           onClick={() => toggleMonth(m.num)}
-                          className={`py-1 text-[11px] font-medium rounded-md border text-center transition-all cursor-pointer ${
+                          className={`py-1 text-[10px] font-medium rounded-md border text-center transition-all cursor-pointer ${
                             isSelected
                               ? "bg-indigo-600 border-indigo-600 text-white shadow-xs font-semibold"
                               : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50/50"
