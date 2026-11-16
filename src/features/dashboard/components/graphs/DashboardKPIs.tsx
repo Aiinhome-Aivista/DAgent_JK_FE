@@ -561,7 +561,7 @@ export const DashboardKPIs = () => {
 
         {/* Dropdown Popover */}
         {isCalendarOpen && (
-          <div className="absolute top-full right-0 w-[270px] mt-1.5 z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 text-slate-700 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 text-slate-700 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-100">
             {/* Mode Switcher */}
             <div className="flex items-center p-0.5 bg-slate-100 rounded-lg text-[11px] font-semibold text-slate-600">
               <button
@@ -726,16 +726,16 @@ export const DashboardKPIs = () => {
                     </div>
 
                     {/* Month / Year Selectors */}
-                    <div className="flex items-center justify-between px-1">
+                    <div className="flex items-center justify-between px-0.5">
                       <button
                         type="button"
                         onClick={handlePrevPickerMonth}
-                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
+                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                         title="Previous Month"
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
                       </button>
-                      <div className="flex items-center justify-center gap-1.5 flex-1">
+                      <div className="flex items-center gap-1.5">
                         <select
                           value={pickerMonth}
                           onChange={(e) => setPickerMonth(Number(e.target.value))}
@@ -762,7 +762,7 @@ export const DashboardKPIs = () => {
                       <button
                         type="button"
                         onClick={handleNextPickerMonth}
-                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
+                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
                         title="Next Month"
                       >
                         <ChevronRight className="w-3.5 h-3.5" />
