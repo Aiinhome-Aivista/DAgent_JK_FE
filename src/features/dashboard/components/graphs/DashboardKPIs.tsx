@@ -1,7 +1,7 @@
 import { queuedFetch, useAvailableYears } from "./dashboardHooks";
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import toast from "react-hot-toast";
-import { RefreshCw, Calendar, ChevronDown, RotateCcw, X } from "lucide-react";
+import { RefreshCw, Calendar, ChevronDown, ChevronLeft, ChevronRight, RotateCcw, X } from "lucide-react";
 import { defaultConfig } from "@/src/services/api.config";
 
 interface FilterParams {
@@ -97,12 +97,69 @@ export const DashboardKPIs = () => {
   const [activeFilterLabel, setActiveFilterLabel] = useState<string | null>(null);
   const [isFilterActive, setIsFilterActive] = useState(false);
 
-  // Sync selectedYear with latest available dynamic year once loaded
+  // Custom Date Picker Popup State (for Date Range tab - 100% dynamic without browser 2022/2023)
+  const [activePicker, setActivePicker] = useState<"start" | "end" | null>(null);
+  const [pickerYear, setPickerYear] = useState<string>("2026");
+  const [pickerMonth, setPickerMonth] = useState<number>(11);
+
+  // Sync selectedYear & pickerYear with latest available dynamic year once loaded
   useEffect(() => {
-    if (dynamicYears.length > 0 && (!selectedYear || !dynamicYears.includes(selectedYear))) {
-      setSelectedYear(dynamicYears[0]);
+    if (dynamicYears.length > 0) {
+      if (!selectedYear || !dynamicYears.includes(selectedYear)) {
+        setSelectedYear(dynamicYears[0]);
+      }
+      if (!pickerYear || !dynamicYears.includes(pickerYear)) {
+        setPickerYear(dynamicYears[0]);
+      }
     }
-  }, [dynamicYears, selectedYear]);
+  }, [dynamicYears, selectedYear, pickerYear]);
+
+  const handlePrevPickerMonth = () => {
+    if (pickerMonth === 1) {
+      const yrIdx = dynamicYears.indexOf(pickerYear);
+      if (yrIdx !== -1 && yrIdx < dynamicYears.length - 1) {
+        setPickerYear(dynamicYears[yrIdx + 1]);
+        setPickerMonth(12);
+      }
+    } else {
+      setPickerMonth((prev) => prev - 1);
+    }
+  };
+
+  const handleNextPickerMonth = () => {
+    if (pickerMonth === 12) {
+      const yrIdx = dynamicYears.indexOf(pickerYear);
+      if (yrIdx > 0) {
+        setPickerYear(dynamicYears[yrIdx - 1]);
+        setPickerMonth(1);
+      }
+    } else {
+      setPickerMonth((prev) => prev + 1);
+    }
+  };
+
+  const handlePickerDaySelect = (day: number) => {
+    const yr = pickerYear || (dynamicYears[0] ?? "2026");
+    const mStr = String(pickerMonth).padStart(2, "0");
+    const dStr = String(day).padStart(2, "0");
+    const chosen = `${yr}-${mStr}-${dStr}`;
+
+    if (activePicker === "start") {
+      setStartDate(chosen);
+      if (endDate && chosen > endDate) {
+        setEndDate("");
+      }
+      setActivePicker("end");
+    } else if (activePicker === "end") {
+      if (startDate && chosen < startDate) {
+        setEndDate(startDate);
+        setStartDate(chosen);
+      } else {
+        setEndDate(chosen);
+      }
+      setActivePicker(null);
+    }
+  };
 
   const activeFilterRef = useRef<FilterParams | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -596,39 +653,191 @@ export const DashboardKPIs = () => {
               </div>
             ) : (
               <div className="flex flex-col gap-2">
-                {/* Date Range Inputs with dynamic min/max */}
+                {/* Start Date Button / Field */}
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                     Start Date
                   </label>
-                  <input
-                    type="date"
-                    min={minAllowedDate}
-                    max={maxAllowedDate}
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full px-2 py-1 text-xs rounded-md border border-slate-200 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePicker(activePicker === "start" ? null : "start");
+                      if (startDate) {
+                        const [y, m] = startDate.split("-");
+                        if (y) setPickerYear(y);
+                        if (m) setPickerMonth(parseInt(m, 10));
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md border transition-all cursor-pointer ${
+                      activePicker === "start"
+                        ? "border-indigo-500 ring-1 ring-indigo-200 bg-white"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className={startDate ? "text-slate-800 font-semibold" : "text-slate-400 font-normal"}>
+                      {startDate || "YYYY-MM-DD"}
+                    </span>
+                    <Calendar className={`w-3.5 h-3.5 ${activePicker === "start" ? "text-indigo-600" : "text-slate-400"}`} />
+                  </button>
                 </div>
+
+                {/* End Date Button / Field */}
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                     End Date
                   </label>
-                  <input
-                    type="date"
-                    min={minAllowedDate}
-                    max={maxAllowedDate}
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full px-2 py-1 text-xs rounded-md border border-slate-200 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActivePicker(activePicker === "end" ? null : "end");
+                      if (endDate) {
+                        const [y, m] = endDate.split("-");
+                        if (y) setPickerYear(y);
+                        if (m) setPickerMonth(parseInt(m, 10));
+                      }
+                    }}
+                    className={`w-full flex items-center justify-between px-2.5 py-1.5 text-xs rounded-md border transition-all cursor-pointer ${
+                      activePicker === "end"
+                        ? "border-indigo-500 ring-1 ring-indigo-200 bg-white"
+                        : "border-slate-200 bg-white text-slate-700 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className={endDate ? "text-slate-800 font-semibold" : "text-slate-400 font-normal"}>
+                      {endDate || "YYYY-MM-DD"}
+                    </span>
+                    <Calendar className={`w-3.5 h-3.5 ${activePicker === "end" ? "text-indigo-600" : "text-slate-400"}`} />
+                  </button>
                 </div>
+
+                {/* Custom Interactive Calendar (Without any browser native 2022/2023) */}
+                {activePicker && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 flex flex-col gap-1.5 animate-in fade-in duration-150">
+                    <div className="flex items-center justify-between px-0.5">
+                      <span className="text-[10px] font-bold text-indigo-600 uppercase">
+                        Pick {activePicker === "start" ? "Start Date" : "End Date"}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setActivePicker(null)}
+                        className="text-[10px] text-slate-400 hover:text-slate-600 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Month / Year Selectors */}
+                    <div className="flex items-center justify-between px-0.5">
+                      <button
+                        type="button"
+                        onClick={handlePrevPickerMonth}
+                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                        title="Previous Month"
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <select
+                          value={pickerMonth}
+                          onChange={(e) => setPickerMonth(Number(e.target.value))}
+                          className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                        >
+                          {dynamicMonths.map((m) => (
+                            <option key={m.num} value={m.num}>
+                              {m.name}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          value={pickerYear}
+                          onChange={(e) => setPickerYear(e.target.value)}
+                          className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                        >
+                          {dynamicYears.map((yr) => (
+                            <option key={yr} value={yr}>
+                              {yr}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleNextPickerMonth}
+                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                        title="Next Month"
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Weekday Labels */}
+                    <div className="grid grid-cols-7 gap-0.5 text-center text-[9px] font-bold text-slate-400 py-0.5 border-b border-slate-200/60">
+                      <span>Su</span>
+                      <span>Mo</span>
+                      <span>Tu</span>
+                      <span>We</span>
+                      <span>Th</span>
+                      <span>Fr</span>
+                      <span>Sa</span>
+                    </div>
+
+                    {/* Day Grid */}
+                    <div className="grid grid-cols-7 gap-0.5">
+                      {(() => {
+                        const yrNum = parseInt(pickerYear || "2026", 10) || 2026;
+                        const daysInMonth = new Date(yrNum, pickerMonth, 0).getDate();
+                        const firstDayOfWeek = new Date(yrNum, pickerMonth - 1, 1).getDay();
+
+                        return (
+                          <>
+                            {[...Array(firstDayOfWeek)].map((_, i) => (
+                              <div key={`empty-${i}`} className="h-6" />
+                            ))}
+                            {[...Array(daysInMonth)].map((_, i) => {
+                              const day = i + 1;
+                              const mStr = String(pickerMonth).padStart(2, "0");
+                              const dStr = String(day).padStart(2, "0");
+                              const dateStr = `${pickerYear}-${mStr}-${dStr}`;
+
+                              const isStart = startDate === dateStr;
+                              const isEnd = endDate === dateStr;
+                              const isInRange = Boolean(
+                                startDate && endDate && dateStr > startDate && dateStr < endDate
+                              );
+
+                              return (
+                                <button
+                                  key={day}
+                                  type="button"
+                                  onClick={() => handlePickerDaySelect(day)}
+                                  className={`h-6 text-[10px] font-medium rounded transition-all cursor-pointer flex items-center justify-center ${
+                                    isStart || isEnd
+                                      ? "bg-indigo-600 text-white font-bold shadow-xs scale-105 z-10"
+                                      : isInRange
+                                      ? "bg-indigo-100 text-indigo-800 rounded-none font-semibold"
+                                      : "text-slate-700 hover:bg-slate-200/60"
+                                  }`}
+                                >
+                                  {day}
+                                </button>
+                              );
+                            })}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex gap-1.5 pt-1 border-t border-slate-100">
                   <button
                     type="button"
+                    disabled={!startDate || !endDate}
                     onClick={handleApplyDateRangeFilter}
-                    className="flex-1 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-md shadow-xs transition-colors text-center cursor-pointer"
+                    className={`flex-1 py-1.5 text-xs font-semibold rounded-md shadow-xs transition-colors text-center cursor-pointer ${
+                      startDate && endDate
+                        ? "bg-indigo-600 hover:bg-indigo-700 text-white"
+                        : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    }`}
                   >
                     Apply Range
                   </button>

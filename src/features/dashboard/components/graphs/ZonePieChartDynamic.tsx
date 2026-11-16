@@ -137,7 +137,7 @@ export const ZonePieChartDynamic = ({ zone }: { zone?: string | null }) => {
             options={filters.constructions}
           />
           <FilterSelect
-            label="Tyre Type"
+            label="Category"
             value={zoneTyreType}
             onChange={(e) => setZoneTyreType(e.target.value)}
             options={filters.tyreTypes}
