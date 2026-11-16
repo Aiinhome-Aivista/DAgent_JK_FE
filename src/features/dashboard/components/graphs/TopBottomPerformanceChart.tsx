@@ -17,7 +17,7 @@ import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 
 const DIMENSION_OPTIONS = [
   { label: "Customers", value: "Customers" },
-  { label: "Category", value: "Category" },
+  { label: "Categories", value: "Categories" },
   { label: "Territories", value: "Territories" },
   { label: "Regions", value: "Regions" },
   { label: "Materials", value: "Materials" },
@@ -33,6 +33,7 @@ const DAYS_OPTIONS = [
 
 const Y_AXIS_LABEL_MAP: Record<string, string> = {
   Customers: "Customer Name",
+  Categories: "Category",
   Category: "Category",
   Tyres: "Category",
   Territories: "Territory",
