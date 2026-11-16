@@ -813,46 +813,60 @@ export const DashboardKPIs = () => {
                     </div>
 
                     {/* Month / Year Selectors */}
-                    <div className="flex items-center justify-between gap-1 px-0.5">
+                    <div className="flex items-center justify-between gap-1.5 w-full">
                       <button
                         type="button"
                         onClick={handlePrevPickerMonth}
-                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
+                        className="p-1 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer shrink-0"
                         title="Previous Month"
                       >
-                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <ChevronLeft className="w-4 h-4" />
                       </button>
-                      <div className="flex-1 flex items-center justify-center gap-1 min-w-0">
-                        <select
-                          value={pickerMonth}
-                          onChange={(e) => setPickerMonth(Number(e.target.value))}
-                          className="flex-1 min-w-0 bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer text-center"
-                        >
-                          {dynamicMonths.map((m) => (
-                            <option key={m.num} value={m.num}>
-                              {m.name}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={pickerYear}
-                          onChange={(e) => setPickerYear(e.target.value)}
-                          className="flex-1 min-w-0 bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer text-center"
-                        >
-                          {dynamicYears.map((yr) => (
-                            <option key={yr} value={yr}>
-                              {yr}
-                            </option>
-                          ))}
-                        </select>
+
+                      <div className="flex-1 flex items-center justify-center gap-1.5 min-w-0">
+                        {/* Month Select */}
+                        <div className="relative flex-1 min-w-0">
+                          <select
+                            value={pickerMonth}
+                            onChange={(e) => setPickerMonth(Number(e.target.value))}
+                            className="w-full bg-white border border-slate-200 rounded-md py-1 pl-1.5 pr-4 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer appearance-none text-center shadow-2xs"
+                          >
+                            {dynamicMonths.map((m) => {
+                              const shortName = m.name.length > 3 ? m.name.slice(0, 3) : m.name;
+                              return (
+                                <option key={m.num} value={m.num}>
+                                  {shortName}
+                                </option>
+                              );
+                            })}
+                          </select>
+                          <ChevronDown className="w-2.5 h-2.5 text-slate-400 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+
+                        {/* Year Select */}
+                        <div className="relative flex-1 min-w-0">
+                          <select
+                            value={pickerYear}
+                            onChange={(e) => setPickerYear(e.target.value)}
+                            className="w-full bg-white border border-slate-200 rounded-md py-1 pl-1.5 pr-4 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer appearance-none text-center shadow-2xs"
+                          >
+                            {dynamicYears.map((yr) => (
+                              <option key={yr} value={yr}>
+                                {yr}
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronDown className="w-2.5 h-2.5 text-slate-400 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
                       </div>
+
                       <button
                         type="button"
                         onClick={handleNextPickerMonth}
-                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
+                        className="p-1 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer shrink-0"
                         title="Next Month"
                       >
-                        <ChevronRight className="w-3.5 h-3.5" />
+                        <ChevronRight className="w-4 h-4" />
                       </button>
                     </div>
 
