@@ -796,9 +796,9 @@ export const DashboardKPIs = () => {
                   </button>
                 </div>
 
-                {/* Custom Interactive Calendar (Without any browser native 2022/2023) */}
+                {/* Custom Interactive Calendar */}
                 {activePicker && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-2 flex flex-col gap-1.5 animate-in fade-in duration-150">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-1.5 flex flex-col gap-1.5 animate-in fade-in duration-150">
                     <div className="flex items-center justify-between px-0.5">
                       <span className="text-[10px] font-bold text-indigo-600 uppercase">
                         Pick {activePicker === "start" ? "Start Date" : "End Date"}
@@ -813,11 +813,11 @@ export const DashboardKPIs = () => {
                     </div>
 
                     {/* Month / Year Selectors */}
-                    <div className="flex items-center justify-between gap-1.5 w-full">
+                    <div className="flex items-center justify-between gap-1 w-full">
                       <button
                         type="button"
                         onClick={handlePrevPickerMonth}
-                        className="p-1 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer shrink-0"
+                        className="p-1 -ml-0.5 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer shrink-0"
                         title="Previous Month"
                       >
                         <ChevronLeft className="w-4 h-4" />
@@ -825,11 +825,11 @@ export const DashboardKPIs = () => {
 
                       <div className="flex-1 flex items-center justify-center gap-1.5 min-w-0">
                         {/* Month Select */}
-                        <div className="relative flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
                           <select
                             value={pickerMonth}
                             onChange={(e) => setPickerMonth(Number(e.target.value))}
-                            className="w-full bg-white border border-slate-200 rounded-md py-1 pl-1.5 pr-4 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer appearance-none text-center shadow-2xs"
+                            className="w-full bg-white border border-slate-200 hover:border-indigo-300 rounded-md py-1 px-1 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer appearance-none text-center shadow-2xs"
                           >
                             {dynamicMonths.map((m) => {
                               const shortName = m.name.length > 3 ? m.name.slice(0, 3) : m.name;
@@ -840,15 +840,14 @@ export const DashboardKPIs = () => {
                               );
                             })}
                           </select>
-                          <ChevronDown className="w-2.5 h-2.5 text-slate-400 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
 
                         {/* Year Select */}
-                        <div className="relative flex-1 min-w-0">
+                        <div className="flex-1 min-w-0">
                           <select
                             value={pickerYear}
                             onChange={(e) => setPickerYear(e.target.value)}
-                            className="w-full bg-white border border-slate-200 rounded-md py-1 pl-1.5 pr-4 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer appearance-none text-center shadow-2xs"
+                            className="w-full bg-white border border-slate-200 hover:border-indigo-300 rounded-md py-1 px-1 text-[11px] font-bold text-slate-700 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 cursor-pointer appearance-none text-center shadow-2xs"
                           >
                             {dynamicYears.map((yr) => (
                               <option key={yr} value={yr}>
@@ -856,14 +855,13 @@ export const DashboardKPIs = () => {
                               </option>
                             ))}
                           </select>
-                          <ChevronDown className="w-2.5 h-2.5 text-slate-400 absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
                       </div>
 
                       <button
                         type="button"
                         onClick={handleNextPickerMonth}
-                        className="p-1 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer shrink-0"
+                        className="p-1 -mr-0.5 hover:bg-slate-200/80 rounded-md text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer shrink-0"
                         title="Next Month"
                       >
                         <ChevronRight className="w-4 h-4" />
