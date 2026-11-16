@@ -7,6 +7,7 @@ import { defaultConfig } from "@/src/services/api.config";
 interface FilterParams {
   year?: string;
   month?: number;
+  months?: number[];
   start_date?: string;
   end_date?: string;
 }
@@ -91,7 +92,7 @@ export const DashboardKPIs = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [filterMode, setFilterMode] = useState<"month" | "range">("month");
   const [selectedYear, setSelectedYear] = useState<string>("2026");
-  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [selectedMonths, setSelectedMonths] = useState<number[]>([]);
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [activeFilterLabel, setActiveFilterLabel] = useState<string | null>(null);
@@ -267,7 +268,12 @@ export const DashboardKPIs = () => {
 
       if (filter) {
         if (filter.year) payload.year = filter.year;
-        if (filter.month) payload.month = filter.month;
+        if (filter.months && filter.months.length > 0) {
+          payload.months = filter.months;
+          if (filter.months.length === 1) payload.month = filter.months[0];
+        } else if (filter.month) {
+          payload.month = filter.month;
+        }
         if (filter.start_date) payload.start_date = filter.start_date;
         if (filter.end_date) payload.end_date = filter.end_date;
       }
@@ -368,9 +374,22 @@ export const DashboardKPIs = () => {
     }
   };
 
-  // Apply Month / Year Filter
-  const handleApplyMonthFilter = (monthNum?: number | null) => {
-    const targetMonth = monthNum !== undefined ? monthNum : selectedMonth;
+  // Toggle Month in multi-select
+  const toggleMonth = (mNum: number) => {
+    setSelectedMonths((prev) =>
+      prev.includes(mNum) ? prev.filter((m) => m !== mNum) : [...prev, mNum]
+    );
+  };
+
+  // Quick Quarter selection
+  const handleSelectQuarter = (qMonths: number[], qName: string) => {
+    setSelectedMonths(qMonths);
+    handleApplyMonthFilter(qMonths, qName);
+  };
+
+  // Apply Month / Year Filter (Supports single month, multi-months, and full year)
+  const handleApplyMonthFilter = (customMonths?: number[], customLabel?: string) => {
+    const targetMonths = customMonths !== undefined ? customMonths : selectedMonths;
     const sessionId = getSessionId();
     if (!sessionId) {
       toast.error("No active session ID found.");
@@ -380,10 +399,32 @@ export const DashboardKPIs = () => {
     let filter: FilterParams = {};
     let label = "";
 
-    if (targetMonth) {
-      filter = { year: selectedYear, month: targetMonth };
-      const mObj = dynamicMonths.find((m) => m.num === targetMonth);
-      label = `${mObj?.name || targetMonth} ${selectedYear}`;
+    if (customLabel) {
+      label = `${customLabel} ${selectedYear}`;
+      filter = { year: selectedYear, months: targetMonths };
+      if (targetMonths.length === 1) filter.month = targetMonths[0];
+    } else if (targetMonths && targetMonths.length > 0) {
+      const sorted = [...targetMonths].sort((a, b) => a - b);
+      if (sorted.length === 1) {
+        filter = { year: selectedYear, month: sorted[0], months: sorted };
+        const mObj = dynamicMonths.find((m) => m.num === sorted[0]);
+        label = `${mObj?.name || sorted[0]} ${selectedYear}`;
+      } else {
+        filter = { year: selectedYear, months: sorted };
+        const jsonStr = JSON.stringify(sorted);
+        if (jsonStr === JSON.stringify([1, 2, 3])) {
+          label = `Q1 (Jan-Mar) ${selectedYear}`;
+        } else if (jsonStr === JSON.stringify([4, 5, 6])) {
+          label = `Q2 (Apr-Jun) ${selectedYear}`;
+        } else if (jsonStr === JSON.stringify([7, 8, 9])) {
+          label = `Q3 (Jul-Sep) ${selectedYear}`;
+        } else if (jsonStr === JSON.stringify([10, 11, 12])) {
+          label = `Q4 (Oct-Dec) ${selectedYear}`;
+        } else {
+          const names = sorted.map((num) => dynamicMonths.find((m) => m.num === num)?.name || num);
+          label = `${names.slice(0, 3).join(", ")}${names.length > 3 ? "..." : ""} ${selectedYear}`;
+        }
+      }
     } else {
       // Full Year selected
       filter = { year: selectedYear };
@@ -442,7 +483,7 @@ export const DashboardKPIs = () => {
     activeFilterRef.current = null;
     setIsFilterActive(false);
     setActiveFilterLabel(null);
-    setSelectedMonth(null);
+    setSelectedMonths([]);
     setStartDate("");
     setEndDate("");
     setIsCalendarOpen(false);
@@ -561,7 +602,7 @@ export const DashboardKPIs = () => {
 
         {/* Dropdown Popover */}
         {isCalendarOpen && (
-          <div className="absolute top-full left-0 right-0 mt-1.5 z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 text-slate-700 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-100">
+          <div className="absolute top-full right-0 w-[240px] max-w-[calc(100vw-2rem)] mt-1.5 z-50 bg-white rounded-xl shadow-xl border border-slate-200 p-2.5 text-slate-700 flex flex-col gap-2.5 animate-in fade-in zoom-in-95 duration-100">
             {/* Mode Switcher */}
             <div className="flex items-center p-0.5 bg-slate-100 rounded-lg text-[11px] font-semibold text-slate-600">
               <button
@@ -613,17 +654,50 @@ export const DashboardKPIs = () => {
                   </div>
                 </div>
 
-                {/* Dynamic Month Grid */}
+                {/* Quarter Shortcuts */}
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                    Quarter Shortcuts
+                  </span>
+                  <div className="grid grid-cols-4 gap-1">
+                    {[
+                      { name: "Q1", label: "Q1 (Jan-Mar)", months: [1, 2, 3] },
+                      { name: "Q2", label: "Q2 (Apr-Jun)", months: [4, 5, 6] },
+                      { name: "Q3", label: "Q3 (Jul-Sep)", months: [7, 8, 9] },
+                      { name: "Q4", label: "Q4 (Oct-Dec)", months: [10, 11, 12] },
+                    ].map((q) => {
+                      const isQActive =
+                        JSON.stringify([...selectedMonths].sort((a, b) => a - b)) ===
+                        JSON.stringify(q.months);
+                      return (
+                        <button
+                          key={q.name}
+                          type="button"
+                          onClick={() => handleSelectQuarter(q.months, q.name)}
+                          className={`py-1 text-[11px] font-semibold rounded-md border text-center transition-all cursor-pointer ${
+                            isQActive
+                              ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
+                              : "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100"
+                          }`}
+                        >
+                          {q.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Dynamic Month Grid (Multi-Select) */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      Select Month
+                      Select Month(s)
                     </span>
                     <button
                       type="button"
                       onClick={() => {
-                        setSelectedMonth(null);
-                        handleApplyMonthFilter(null);
+                        setSelectedMonths([]);
+                        handleApplyMonthFilter([]);
                       }}
                       className="text-[10px] text-indigo-600 hover:underline font-semibold cursor-pointer"
                     >
@@ -631,25 +705,38 @@ export const DashboardKPIs = () => {
                     </button>
                   </div>
                   <div className="grid grid-cols-4 gap-1">
-                    {dynamicMonths.map((m) => (
-                      <button
-                        key={m.num}
-                        type="button"
-                        onClick={() => {
-                          setSelectedMonth(m.num);
-                          handleApplyMonthFilter(m.num);
-                        }}
-                        className={`py-1 text-[11px] font-medium rounded-md border text-center transition-all cursor-pointer ${
-                          selectedMonth === m.num
-                            ? "bg-indigo-600 border-indigo-600 text-white shadow-xs"
-                            : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50/50"
-                        }`}
-                      >
-                        {m.name}
-                      </button>
-                    ))}
+                    {dynamicMonths.map((m) => {
+                      const isSelected = selectedMonths.includes(m.num);
+                      return (
+                        <button
+                          key={m.num}
+                          type="button"
+                          onClick={() => toggleMonth(m.num)}
+                          className={`py-1 text-[11px] font-medium rounded-md border text-center transition-all cursor-pointer ${
+                            isSelected
+                              ? "bg-indigo-600 border-indigo-600 text-white shadow-xs font-semibold"
+                              : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50/50"
+                          }`}
+                        >
+                          {m.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
+
+                {/* Apply Selected Months Button */}
+                <button
+                  type="button"
+                  onClick={() => handleApplyMonthFilter()}
+                  className="w-full mt-1 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium rounded-md shadow-xs transition-colors cursor-pointer text-center"
+                >
+                  {selectedMonths.length === 0
+                    ? `Apply Entire Year ${selectedYear}`
+                    : selectedMonths.length === 1
+                    ? `Apply ${dynamicMonths.find((m) => m.num === selectedMonths[0])?.name || ""} ${selectedYear}`
+                    : `Apply Filter (${selectedMonths.length} Months)`}
+                </button>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
@@ -726,20 +813,20 @@ export const DashboardKPIs = () => {
                     </div>
 
                     {/* Month / Year Selectors */}
-                    <div className="flex items-center justify-between px-0.5">
+                    <div className="flex items-center justify-between gap-1 px-0.5">
                       <button
                         type="button"
                         onClick={handlePrevPickerMonth}
-                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
                         title="Previous Month"
                       >
                         <ChevronLeft className="w-3.5 h-3.5" />
                       </button>
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex-1 flex items-center justify-center gap-1 min-w-0">
                         <select
                           value={pickerMonth}
                           onChange={(e) => setPickerMonth(Number(e.target.value))}
-                          className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                          className="flex-1 min-w-0 bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer text-center"
                         >
                           {dynamicMonths.map((m) => (
                             <option key={m.num} value={m.num}>
@@ -750,7 +837,7 @@ export const DashboardKPIs = () => {
                         <select
                           value={pickerYear}
                           onChange={(e) => setPickerYear(e.target.value)}
-                          className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
+                          className="flex-1 min-w-0 bg-white border border-slate-200 rounded px-1 py-0.5 text-[11px] font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer text-center"
                         >
                           {dynamicYears.map((yr) => (
                             <option key={yr} value={yr}>
@@ -762,7 +849,7 @@ export const DashboardKPIs = () => {
                       <button
                         type="button"
                         onClick={handleNextPickerMonth}
-                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                        className="p-1 hover:bg-slate-200/70 rounded text-slate-500 hover:text-slate-800 transition-colors cursor-pointer shrink-0"
                         title="Next Month"
                       >
                         <ChevronRight className="w-3.5 h-3.5" />
