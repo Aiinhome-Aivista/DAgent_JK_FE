@@ -51,7 +51,7 @@ export const DashboardKPIs = () => {
 
     const unique = Array.from(new Set(list));
     unique.sort((a, b) => (parseInt(b, 10) || 0) - (parseInt(a, 10) || 0));
-    return unique.length > 0 ? unique : ["2026", "2025", "2024"];
+    return unique;
   }, [availableYears]);
 
   const dynamicMonths = useMemo(() => {
@@ -340,6 +340,12 @@ export const DashboardKPIs = () => {
     fetchDefaultMetrics(sessionId, false, filter);
   };
 
+  // Allowed Date Boundaries (100% dynamic from API dynamicYears)
+  const minAllowedYear = dynamicYears.length > 0 ? dynamicYears[dynamicYears.length - 1] : "";
+  const maxAllowedYear = dynamicYears.length > 0 ? dynamicYears[0] : "";
+  const minAllowedDate = minAllowedYear ? `${minAllowedYear}-01-01` : undefined;
+  const maxAllowedDate = maxAllowedYear ? `${maxAllowedYear}-12-31` : undefined;
+
   // Apply Custom Date Range Filter
   const handleApplyDateRangeFilter = () => {
     if (!startDate || !endDate) {
@@ -348,6 +354,14 @@ export const DashboardKPIs = () => {
     }
     if (startDate > endDate) {
       toast.error("Start date cannot be after end date.");
+      return;
+    }
+    if (minAllowedDate && startDate < minAllowedDate) {
+      toast.error(`Please select a date from ${minAllowedYear} onwards.`);
+      return;
+    }
+    if (maxAllowedDate && endDate > maxAllowedDate) {
+      toast.error(`Please select a date up to ${maxAllowedYear}.`);
       return;
     }
     const sessionId = getSessionId();
@@ -589,8 +603,8 @@ export const DashboardKPIs = () => {
                   </label>
                   <input
                     type="date"
-                    min={`${dynamicYears[dynamicYears.length - 1] || "2020"}-01-01`}
-                    max={`${dynamicYears[0] || "2026"}-12-31`}
+                    min={minAllowedDate}
+                    max={maxAllowedDate}
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     className="w-full px-2 py-1 text-xs rounded-md border border-slate-200 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
@@ -602,8 +616,8 @@ export const DashboardKPIs = () => {
                   </label>
                   <input
                     type="date"
-                    min={`${dynamicYears[dynamicYears.length - 1] || "2020"}-01-01`}
-                    max={`${dynamicYears[0] || "2026"}-12-31`}
+                    min={minAllowedDate}
+                    max={maxAllowedDate}
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     className="w-full px-2 py-1 text-xs rounded-md border border-slate-200 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
