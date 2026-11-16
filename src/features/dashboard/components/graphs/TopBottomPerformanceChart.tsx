@@ -17,7 +17,7 @@ import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 
 const DIMENSION_OPTIONS = [
   { label: "Customers", value: "Customers" },
-  { label: "Tyres", value: "Tyres" },
+  { label: "Category", value: "Category" },
   { label: "Territories", value: "Territories" },
   { label: "Regions", value: "Regions" },
   { label: "Materials", value: "Materials" },
@@ -33,7 +33,8 @@ const DAYS_OPTIONS = [
 
 const Y_AXIS_LABEL_MAP: Record<string, string> = {
   Customers: "Customer Name",
-  Tyres: "Tyre Type",
+  Category: "Category",
+  Tyres: "Category",
   Territories: "Territory",
   Regions: "Region",
   Materials: "Material Description",
@@ -189,12 +190,16 @@ export const TopBottomPerformanceChart = () => {
     rawItems: any[],
     isTop: boolean
   ) => {
-    const config = getUnitConfig(rawItems);
-    const chartData = rawItems.map((item) => ({
-      name: item.name || "Unknown",
+    const validItems = (rawItems || []).filter((item) => {
+      const n = String(item?.name || "").trim().toUpperCase();
+      return n && !["UNKNOWN", "UNKNOWN TYRE", "NULL", "NONE"].includes(n);
+    });
+    const config = getUnitConfig(validItems);
+    const chartData = validItems.map((item, idx) => ({
+      name: item.name,
       value: Number((Number(item.sales_value || 0) / config.divisor).toFixed(4)),
       sales_value: Number(item.sales_value || 0),
-      rank: item.rank,
+      rank: item.rank ?? idx + 1,
     }));
 
     return (
