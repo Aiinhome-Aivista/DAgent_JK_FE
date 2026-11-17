@@ -618,11 +618,8 @@ export const DomesticSalesValueAchievementCard = () => {
 
               <tbody>
                 {sheet1Data.map((row, idx) => {
-                  const isGrandTotal = row.market_segment.trim().toLowerCase() === "domestic";
-                  const isSubTotal = (row.is_total || row.market_segment.includes("Repl") || row.market_segment.includes("OEM + STU + DEF")) && !isGrandTotal;
-                  const rowBg = isGrandTotal
-                    ? "bg-[#dcfcfc] font-bold text-slate-900"
-                    : isSubTotal
+                  const isTotal = row.is_total || row.market_segment.includes("Repl") || row.market_segment.trim().toLowerCase() === "domestic";
+                  const rowBg = isTotal
                     ? "bg-[#fff59d] font-bold text-slate-900"
                     : idx % 2 === 0
                     ? "bg-white hover:bg-slate-50/80"
@@ -631,7 +628,7 @@ export const DomesticSalesValueAchievementCard = () => {
                   return (
                     <tr key={idx} className={`${rowBg} transition-colors text-slate-700`}>
                       <td className="border border-slate-300 px-4 py-2 text-left font-medium">
-                        {row.market_segment}
+                        {row.market_segment.includes("Repl") ? "Repl (4 & 2/3 Whlrs) - Total" : row.market_segment}
                       </td>
                       <td className="border border-slate-300 px-3 py-2 text-right font-mono">
                         {fmtNum(row.prev_year_actual_month)}
