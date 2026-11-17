@@ -14,6 +14,7 @@ import {
   CreditCard,
   Building2,
   Plus,
+  FileSpreadsheet,
 } from "lucide-react";
 import { adminService } from "../../services/admin.service";
 import { AdminUser, AdminTab } from "./types";
@@ -28,6 +29,7 @@ import { AdminChats } from "./components/AdminChats";
 import { AdminPendingKnowledge } from "./components/AdminPendingKnowledge";
 import { CustomPrompts } from "./components/CustomPrompts";
 import { ScheduledReports } from "./components/ScheduledReports";
+import { BulkUserUploadModal } from "./components/BulkUserUploadModal";
 import { ManageLLM } from "./components/ManageLLM";
 import { ManageMasterData } from "./components/ManageMasterData";
 import { AdminKGraphReview } from "./components/AdminKGraphReview";
@@ -60,6 +62,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
   const [isCreatingSchedule, setIsCreatingSchedule] = useState(false);
   const [isCreatingCompany, setIsCreatingCompany] = useState(false);
   const [isCreatingLLM, setIsCreatingLLM] = useState(false);
@@ -317,13 +320,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
 
           {adminSubTab === "users" && (
-            <button
-              onClick={() => setIsCreatingUser(true)}
-              className="px-4 py-2 text-sm font-medium rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 transition-colors flex items-center gap-2 shrink-0 cursor-pointer"
-            >
-              <Users className="w-4 h-4" />
-              Add User
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setIsBulkImportOpen(true)}
+                className="px-3.5 py-2 text-sm font-medium rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
+              >
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                Bulk Import (Excel)
+              </button>
+              <button
+                onClick={() => setIsCreatingUser(true)}
+                className="px-4 py-2 text-sm font-medium rounded-xl bg-[var(--accent)] text-white hover:bg-[var(--accent)]/90 transition-colors flex items-center gap-2 cursor-pointer"
+              >
+                <Users className="w-4 h-4" />
+                Add User
+              </button>
+            </div>
           )}
 
           {adminSubTab === "workspaces" && (
@@ -520,6 +532,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
         </div>
       </div>
+
+      {/* Bulk User Upload (Excel) Modal */}
+      <BulkUserUploadModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        onSuccess={() => fetchData()}
+      />
     </div>
   );
 };
