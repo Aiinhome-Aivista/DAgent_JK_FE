@@ -35,22 +35,26 @@ import { Loader2 } from "lucide-react";
 
 
 interface PlanVsSaleChartProps {
-
   onZoneClick?: (zone: string) => void;
-
+  initialZone?: string | null;
+  lockZone?: boolean;
 }
 
-
-
-export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({ onZoneClick }) => {
-
+export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({
+  onZoneClick,
+  initialZone = null,
+  lockZone = false
+}) => {
   const [dynamicRegionData, setDynamicRegionData] = useState<any[]>([]);
-
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
-  const [currentZone, setCurrentZone] = useState<string | null>(null);
-
+  const [currentZone, setCurrentZone] = useState<string | null>(initialZone || null);
   const sessionId = useSessionId();
+
+  useEffect(() => {
+    if (initialZone !== undefined) {
+      setCurrentZone(initialZone);
+    }
+  }, [initialZone]);
 
 
 
@@ -70,7 +74,8 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({ onZoneC
 
         }
 
-        const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_REVENUE}?session_id=${sessionId}${currentZone ? `&zone=${encodeURIComponent(currentZone)}` : ''}`;
+        const uid = localStorage.getItem("user_id");
+        const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_REVENUE}?session_id=${sessionId}${currentZone ? `&zone=${encodeURIComponent(currentZone)}` : ''}${uid ? `&user_id=${encodeURIComponent(uid)}` : ''}`;
 
         const response = await queuedFetch(url);
 
@@ -222,7 +227,7 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({ onZoneC
 
         <div className="flex items-center gap-2">
 
-          {currentZone && (
+          {currentZone && !lockZone && (
 
             <button
 
@@ -286,7 +291,7 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({ onZoneC
 
             </span>
 
-            {currentZone && (
+            {currentZone && !lockZone && (
 
               <span className="text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded">
 

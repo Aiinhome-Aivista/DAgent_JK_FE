@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 import toast from "react-hot-toast";
 import { RefreshCw, Calendar, ChevronDown, ChevronLeft, ChevronRight, RotateCcw, X } from "lucide-react";
 import { defaultConfig } from "@/src/services/api.config";
+import { getUserHierarchy } from "@/src/utils/userHierarchy";
 
 interface FilterParams {
   year?: string;
@@ -261,10 +262,23 @@ export const DashboardKPIs = () => {
     setIsLoading(true);
     try {
       const url = `${defaultConfig.baseUrl}/default-dashboard-metrics`;
+      const hierarchy = getUserHierarchy();
+      const storedUid = localStorage.getItem("user_id");
+
       const payload: Record<string, any> = {
         session_id: sessionId,
         force_refresh: forceRefresh,
       };
+
+      if (storedUid) {
+        payload.user_id = storedUid;
+      }
+      if (hierarchy?.zone_code) {
+        payload.zone = hierarchy.zone_code;
+      }
+      if (hierarchy?.region_code) {
+        payload.region = hierarchy.region_code;
+      }
 
       if (filter) {
         if (filter.year) payload.year = filter.year;

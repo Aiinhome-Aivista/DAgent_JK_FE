@@ -248,9 +248,13 @@ export const DomesticSalesValueAchievementCard = () => {
       }
 
       const activeMo = monthOverride !== undefined ? monthOverride : selectedMonthNo;
+      const storedUid = localStorage.getItem("user_id");
       let url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.DOMESTIC_SALES_VALUE_ACHIEVEMENT}?session_id=${sessionId}`;
       if (activeMo) {
         url += `&month=${encodeURIComponent(activeMo)}`;
+      }
+      if (storedUid) {
+        url += `&user_id=${encodeURIComponent(storedUid)}`;
       }
 
       const response = await queuedFetch(url);

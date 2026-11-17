@@ -33,6 +33,7 @@ import { NonBilledAccountsCardDynamic } from "./NonBilledAccountsCardDynamic";
 import { OverduePieChartDynamic } from "./OverduePieChartDynamic";
 import { ExposureCardDynamic } from "./ExposureCardDynamic";
 import { DomesticSalesValueAchievementCard } from "./DomesticSalesValueAchievementCard";
+import { getUserHierarchy } from "../../../../utils/userHierarchy";
 
 const cleanParagraphText = (text: string) => {
   if (!text) return "";
@@ -794,7 +795,12 @@ const SummaryRevisedDownloadCard = () => {
 
 
 export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?: boolean }) => {
-  const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const userHierarchy = React.useMemo(() => getUserHierarchy(), []);
+  const initialZone = userHierarchy?.zone_code || null;
+  const [selectedZone, setSelectedZone] = useState<string | null>(initialZone);
+
+  // If user is restricted to a zone, lock selectedZone to their zone
+  const effectiveZone = userHierarchy?.isZoneRestricted ? (userHierarchy.zone_code || selectedZone) : selectedZone;
 
   return (
     <div className="flex flex-col gap-6 overflow-x-hidden p-2">
@@ -805,25 +811,34 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
       <DomesticSalesValueAchievementCard />
 
       {/* 2. Chart 1: Sales Revenue (Plan vs Sale & Achievement) */}
-      <PlanVsSaleChartDynamic onZoneClick={(zone) => setSelectedZone(zone)} />
+      <PlanVsSaleChartDynamic
+        initialZone={effectiveZone}
+        lockZone={userHierarchy?.isZoneRestricted}
+        onZoneClick={(zone) => {
+          if (!userHierarchy?.isZoneRestricted) {
+            setSelectedZone(zone);
+          }
+        }}
+      />
 
       {/* 3. Chart 2: Year-wise Sales Comparison */}
-      <YearComparisonChartDynamic zone={selectedZone} />
+      <YearComparisonChartDynamic
+        zone={effectiveZone}
+        region={userHierarchy?.region_code || undefined}
+        lockZone={userHierarchy?.isZoneRestricted}
+        lockRegion={userHierarchy?.isRegionRestricted}
+      />
 
       {/* 4. Sales by Zone & Top 10 Tyre Types by Sales */}
-
-      <ZonePieChartDynamic zone={selectedZone} />
-      <TyreSalesChartDynamic zone={selectedZone} />
+      <ZonePieChartDynamic zone={effectiveZone} />
+      <TyreSalesChartDynamic zone={effectiveZone} />
 
       {/* 4b. Top 10 & Bottom 10 Sales Performance (Side-by-side Top 10 and Bottom 10) */}
       <TopBottomPerformanceChart />
 
-
       {/* 5. Category Sales & Actual Sales by Account Category */}
-
-      <CategorySalesCardDynamic zone={selectedZone} />
-      <AccountCategorySalesCardDynamic zone={selectedZone} />
-
+      <CategorySalesCardDynamic zone={effectiveZone} />
+      <AccountCategorySalesCardDynamic zone={effectiveZone} />
     </div>
   );
 };

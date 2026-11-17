@@ -48,7 +48,19 @@ const DYNAMIC_PALETTE = [
   "#14b8a6", // Teal
 ];
 
-export const YearComparisonChartDynamic = ({ zone }: { zone?: string | null }) => {
+interface YearComparisonChartDynamicProps {
+  zone?: string | null;
+  region?: string | null;
+  lockZone?: boolean;
+  lockRegion?: boolean;
+}
+
+export const YearComparisonChartDynamic = ({
+  zone,
+  region,
+  lockZone = false,
+  lockRegion = false
+}: YearComparisonChartDynamicProps) => {
   const sessionId = useSessionId();
 
   // Dynamic filter lists fetched from backend APIs (zero hardcoding)
@@ -59,11 +71,23 @@ export const YearComparisonChartDynamic = ({ zone }: { zone?: string | null }) =
   const [yearsList, setYearsList] = useState<FilterOptionItem[]>([]);
 
   // Selected filter states
-  const [selectedZone, setSelectedZone] = useState<string>("ALL");
-  const [selectedRegion, setSelectedRegion] = useState<string>("ALL");
+  const [selectedZone, setSelectedZone] = useState<string>(zone && zone.toUpperCase() !== "ALL" ? zone : "ALL");
+  const [selectedRegion, setSelectedRegion] = useState<string>(region && region.toUpperCase() !== "ALL" ? region : "ALL");
   const [selectedCustomerType, setSelectedCustomerType] = useState<string>("ALL");
   const [selectedMonth, setSelectedMonth] = useState<string>("ALL");
   const [selectedYears, setSelectedYears] = useState<number[]>([]);
+
+  useEffect(() => {
+    if (zone && zone.toUpperCase() !== "ALL") {
+      setSelectedZone(zone);
+    }
+  }, [zone]);
+
+  useEffect(() => {
+    if (region && region.toUpperCase() !== "ALL") {
+      setSelectedRegion(region);
+    }
+  }, [region]);
 
   // Chart and loading states
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
@@ -508,10 +532,11 @@ export const YearComparisonChartDynamic = ({ zone }: { zone?: string | null }) =
     onChange: (e: any) => void,
     options: FilterOptionItem[],
     defaultLabel = "ALL",
-    isLoading = false
+    isLoading = false,
+    disabled = false
   ) => (
     <div
-      className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors focus-within:border-slate-300 focus-within:shadow-sm"
+      className={`flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 ${disabled ? "opacity-85 bg-slate-50 cursor-not-allowed" : "hover:bg-slate-50"} transition-colors focus-within:border-slate-300 focus-within:shadow-sm`}
       style={{ minWidth: "130px", flexShrink: 0 }}
     >
       <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
@@ -526,7 +551,8 @@ export const YearComparisonChartDynamic = ({ zone }: { zone?: string | null }) =
         <select
           value={value}
           onChange={onChange}
-          className="text-xs font-medium text-slate-700 bg-transparent outline-none cursor-pointer w-full"
+          disabled={disabled}
+          className={`text-xs font-medium text-slate-700 bg-transparent outline-none ${disabled ? "cursor-not-allowed text-indigo-700 font-semibold" : "cursor-pointer"} w-full`}
         >
           <option value="ALL">{defaultLabel}</option>
           {options
@@ -554,10 +580,10 @@ export const YearComparisonChartDynamic = ({ zone }: { zone?: string | null }) =
         {/* Filters and Controls Bar: Single horizontal scrollable row without wrap */}
         <div className="flex flex-nowrap items-center gap-2.5 overflow-x-auto pb-2 w-full lg:w-auto custom-h-scrollbar">
           {/* 1. Zone Dropdown */}
-          {renderFilterSelect("Zone", selectedZone, (e) => handleZoneChange(e.target.value), zonesList, "ALL", false)}
+          {renderFilterSelect("Zone", selectedZone, (e) => handleZoneChange(e.target.value), zonesList, "ALL", false, lockZone)}
 
           {/* 2. Region Dropdown */}
-          {renderFilterSelect("Region", selectedRegion, (e) => handleRegionChange(e.target.value), regionsList, "ALL", isRegionLoading)}
+          {renderFilterSelect("Region", selectedRegion, (e) => handleRegionChange(e.target.value), regionsList, "ALL", isRegionLoading, lockRegion)}
 
           {/* 3. Customer Type Dropdown */}
           {renderFilterSelect("Customer Type", selectedCustomerType, (e) => handleCustomerTypeChange(e.target.value), customerTypesList, "ALL", isCustomerTypeLoading)}
