@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Download, Upload, AlertCircle, CheckCircle2, X, FileSpreadsheet, Loader2, Key } from "lucide-react";
 import toast from "react-hot-toast";
+import { defaultConfig } from "../../../services/api.config";
 
 interface ValidationError {
   row: number;
@@ -42,11 +43,41 @@ export const BulkUserUploadModal: React.FC<BulkUserUploadModalProps> = ({
 
   if (!isOpen) return null;
 
+  const downloadClientCsvTemplate = () => {
+    const csvContent =
+      "Full Name,Email,Rank,Designation,Zone Code,Region Code,Territory Code\n" +
+      "Arun Sharma,arun.sharma@jktyre.com,1,VP & National Head,ALL,ALL,ALL\n" +
+      "Amitabh Roy,amitabh.roy@jktyre.com,2,Zonal Head (North),NZ,ALL,ALL\n" +
+      "Sandeep Singh,sandeep.singh@jktyre.com,3,Regional Manager (Jaipur),CZ,3681,ALL\n" +
+      "Karthik Raman,karthik.raman@jktyre.com,3,Regional Manager (Bangalore),SZ,1161,ALL\n" +
+      "Vikash Verma,vikash.verma@jktyre.com,4,Field Executive,CZ,3681,116201\n";
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "JK_User_Import_Template.csv";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    toast.success("Standard template downloaded successfully");
+  };
+
   const handleDownloadTemplate = async () => {
     setIsDownloading(true);
+    const baseUrl = defaultConfig.baseUrl || "";
     try {
-      const response = await fetch("/api/admin/download-user-template");
-      if (!response.ok) throw new Error("Failed to download template");
+      const response = await fetch(`${baseUrl}/api/admin/download-user-template`);
+      const contentType = response.headers.get("content-type") || "";
+
+      // If backend returned HTML (e.g. Vite SPA fallback or 404), do NOT save as corrupt xlsx!
+      if (!response.ok || contentType.includes("text/html")) {
+        console.warn("Backend template endpoint returned HTML or was unreachable, generating clean CSV template");
+        downloadClientCsvTemplate();
+        return;
+      }
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -58,8 +89,8 @@ export const BulkUserUploadModal: React.FC<BulkUserUploadModalProps> = ({
       window.URL.revokeObjectURL(url);
       toast.success("Excel template downloaded successfully");
     } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Could not download template");
+      console.warn("Falling back to client template:", err);
+      downloadClientCsvTemplate();
     } finally {
       setIsDownloading(false);
     }
@@ -101,9 +132,10 @@ export const BulkUserUploadModal: React.FC<BulkUserUploadModalProps> = ({
 
     const formData = new FormData();
     formData.append("file", selectedFile);
+    const baseUrl = defaultConfig.baseUrl || "";
 
     try {
-      const response = await fetch("/api/admin/import-users-excel", {
+      const response = await fetch(`${baseUrl}/api/admin/import-users-excel`, {
         method: "POST",
         body: formData,
       });
