@@ -813,7 +813,10 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
       {/* 2. Chart 1: Sales Revenue (Plan vs Sale & Achievement) */}
       <PlanVsSaleChartDynamic
         initialZone={effectiveZone}
+        initialRegion={userHierarchy?.region_code || null}
         lockZone={userHierarchy?.isZoneRestricted}
+        lockRegion={userHierarchy?.isRegionRestricted}
+        userHierarchy={userHierarchy}
         onZoneClick={(zone) => {
           if (!userHierarchy?.isZoneRestricted) {
             setSelectedZone(zone);
