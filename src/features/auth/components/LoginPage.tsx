@@ -60,6 +60,9 @@ export const LoginPage = ({ onBack, onLoginSuccess, isAdminLogin = false }: Logi
             localStorage.setItem('DAgent_active_workspace', JSON.stringify(response.data.active_workspace));
             localStorage.setItem('DAgent_session_id', response.data.active_workspace.session_id);
           }
+          if (response.data.hierarchy) {
+            localStorage.setItem('DAgent_user_hierarchy', JSON.stringify(response.data.hierarchy));
+          }
         }
         onLoginSuccess();
       } else {

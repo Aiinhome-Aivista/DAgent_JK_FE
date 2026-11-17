@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Download, Upload, AlertCircle, CheckCircle2, X, FileSpreadsheet, Loader2, Key } from "lucide-react";
+import { Download, Upload, AlertCircle, CheckCircle2, X, FileSpreadsheet, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 import { defaultConfig } from "../../../services/api.config";
 
@@ -326,7 +326,6 @@ export const BulkUserUploadModal: React.FC<BulkUserUploadModalProps> = ({
                       <th className="py-2 px-3">Email</th>
                       <th className="py-2 px-3">Designation</th>
                       <th className="py-2 px-3">Scope (Zone/Reg)</th>
-                      <th className="py-2 px-3">Temp Password</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-emerald-100 text-[11px]">
@@ -337,9 +336,6 @@ export const BulkUserUploadModal: React.FC<BulkUserUploadModalProps> = ({
                         <td className="py-2 px-3 text-slate-600">{u.designation}</td>
                         <td className="py-2 px-3 font-mono font-semibold text-indigo-700">
                           {u.zone_code} / {u.region_code}
-                        </td>
-                        <td className="py-2 px-3 font-mono font-bold text-slate-800">
-                          {u.temp_password || "••••••••"}
                         </td>
                       </tr>
                     ))}
