@@ -130,7 +130,7 @@ export const FilterSelect = ({
       disabled={disabled}
       className={`text-xs font-medium bg-transparent outline-none ${
         disabled
-          ? "cursor-not-allowed text-indigo-700 font-semibold"
+          ? "cursor-not-allowed text-slate-700 font-semibold"
           : "cursor-pointer text-slate-700"
       } w-full`}
     >

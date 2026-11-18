@@ -552,7 +552,7 @@ export const YearComparisonChartDynamic = ({
           value={value}
           onChange={onChange}
           disabled={disabled}
-          className={`text-xs font-medium text-slate-700 bg-transparent outline-none ${disabled ? "cursor-not-allowed text-indigo-700 font-semibold" : "cursor-pointer"} w-full`}
+          className={`text-xs font-medium text-slate-700 bg-transparent outline-none ${disabled ? "cursor-not-allowed text-slate-700 font-semibold" : "cursor-pointer"} w-full`}
         >
           <option value="ALL">{defaultLabel}</option>
           {options
