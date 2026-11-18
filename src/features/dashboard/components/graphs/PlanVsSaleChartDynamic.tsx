@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
 import { useSessionId, queuedFetch } from "./dashboardHooks";
+import { getUserHierarchy } from "@/src/utils/userHierarchy";
 import {
   ComposedChart,
   Line,
@@ -28,18 +29,17 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({
   initialZone = null,
   lockZone = false
 }) => {
+  const userHierarchy = useMemo(() => getUserHierarchy(), []);
+  const isRestricted = !!userHierarchy?.isZoneRestricted || lockZone;
+  const assignedZone = userHierarchy?.zone_code || initialZone || null;
+  const assignedRegion = userHierarchy?.region_code || null;
+
   const [level, setLevel] = useState<DrilldownLevel>("zone");
-  const [selectedZone, setSelectedZone] = useState<string | null>(initialZone || null);
+  const [selectedZone, setSelectedZone] = useState<string | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null);
   const [dynamicRegionData, setDynamicRegionData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const sessionId = useSessionId();
-
-  useEffect(() => {
-    if (initialZone !== undefined && initialZone !== null) {
-      setSelectedZone(initialZone);
-    }
-  }, [initialZone]);
 
   const getFullName = (shortName: string) => {
     if (!shortName) return "Unknown";
@@ -78,12 +78,33 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({
           return;
         }
 
-        const uid = localStorage.getItem("user_id");
+        const uid = localStorage.getItem("DAgent_user_id") || localStorage.getItem("user_id");
         const params = new URLSearchParams();
         params.append("session_id", sessionId);
         params.append("level", level);
-        if (selectedZone) params.append("zone", selectedZone);
-        if (selectedRegion) params.append("region", selectedRegion);
+
+        if (level === "zone") {
+          // If restricted, filter by assigned zone; if unrestricted, show all zones
+          if (isRestricted && assignedZone) {
+            params.append("zone", assignedZone);
+          }
+        } else if (level === "region") {
+          // At region level, zone is either selected or user's assigned zone
+          const effZone = selectedZone || assignedZone;
+          if (effZone) params.append("zone", effZone);
+
+          // If user has specific region access, lock region to assigned region
+          if (userHierarchy?.isRegionRestricted && assignedRegion) {
+            params.append("region", assignedRegion);
+          }
+        } else if (level === "territory") {
+          // At territory level, pass zone and region
+          const effZone = selectedZone || assignedZone;
+          if (effZone) params.append("zone", effZone);
+          const effRegion = selectedRegion || assignedRegion;
+          if (effRegion) params.append("region", effRegion);
+        }
+
         if (uid) params.append("user_id", uid);
 
         const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_REVENUE}?${params.toString()}`;
@@ -94,15 +115,23 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({
 
         if (rawList && Array.isArray(rawList)) {
           const mappedData = rawList.map((item: any) => {
-            const rawZone = item.zone || item.city || item.city_or_zone_name || item.Region || item.region || item.territory || "Unknown";
-            const displayName = item.zone ? getFullName(item.zone) : (item.city_or_zone_name || item.city || item.region || item.territory || rawZone);
+            const rawKey = item.zone || item.region || item.territory || item.city_or_zone_name || item.city || "Unknown";
+            let displayName = rawKey;
+
+            if (level === "zone") {
+              displayName = item.zone ? getFullName(item.zone) : (item.city_or_zone_name || item.city || rawKey);
+            } else if (level === "region") {
+              displayName = item.region || item.city_or_zone_name || item.city || rawKey;
+            } else {
+              displayName = item.territory || item.city_or_zone_name || item.city || rawKey;
+            }
 
             return {
               city: displayName,
-              originalZone: rawZone,
-              zone: item.zone || null,
-              region: item.region || null,
-              territory: item.territory || null,
+              originalZone: rawKey,
+              zone: item.zone || item.zoneCode || null,
+              region: item.region || item.regionCode || null,
+              territory: item.territory || item.territoryCode || null,
               planValue: Number(item.planValueCr ?? item.plan_value_cr ?? 0),
               saleValue: Number(item.saleValueCr ?? item.sale_value_cr ?? item.saleV ?? 0),
               achevValue: Number(item.achievValuePct ?? item.achiev_value_pct ?? 0)
@@ -122,21 +151,21 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({
     };
 
     fetchSalesRevenue();
-  }, [sessionId, level, selectedZone, selectedRegion]);
+  }, [sessionId, level, selectedZone, selectedRegion, isRestricted, assignedZone, assignedRegion]);
 
   const handleDrilldown = (data: any) => {
     const item = data?.payload || data;
     if (!item) return;
 
     if (level === "zone") {
-      const clickedZone = item.zone || getShortCode(item.originalZone || item.city || item.value || "");
+      const clickedZone = item.zone || getShortCode(item.city || item.originalZone || "");
       if (clickedZone) {
         setSelectedZone(clickedZone);
         setLevel("region");
         if (onZoneClick) onZoneClick(clickedZone);
       }
     } else if (level === "region") {
-      const clickedRegion = item.region || item.city || item.originalZone || item.value;
+      const clickedRegion = item.region || item.city || item.originalZone;
       if (clickedRegion) {
         setSelectedRegion(clickedRegion);
         setLevel("territory");
@@ -151,10 +180,8 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({
     } else if (level === "region") {
       setLevel("zone");
       setSelectedRegion(null);
-      if (!lockZone) {
-        setSelectedZone(null);
-      }
-      if (onZoneClick) onZoneClick(lockZone && initialZone ? initialZone : "");
+      setSelectedZone(null);
+      if (onZoneClick) onZoneClick("");
     }
   };
 
@@ -163,9 +190,12 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({
 
   let titleSuffix = "";
   if (level === "region") {
-    titleSuffix = selectedZone ? (getFullName(selectedZone) || selectedZone) : "";
+    const z = selectedZone || assignedZone;
+    titleSuffix = z ? (getFullName(z) || z) : "";
   } else if (level === "territory") {
-    titleSuffix = selectedRegion ? `${selectedZone ? getFullName(selectedZone) + " / " : ""}${selectedRegion}` : "";
+    const z = selectedZone || assignedZone;
+    const r = selectedRegion || assignedRegion;
+    titleSuffix = r ? `${z ? getFullName(z) + " / " : ""}${r}` : "";
   }
 
   const leftDomain: any = [0, 'auto'];
