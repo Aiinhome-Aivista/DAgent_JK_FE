@@ -578,7 +578,7 @@ export const DomesticSalesValueAchievementCard = () => {
                     colSpan={8}
                     className="bg-[#dcfcfc] text-[#006666] font-bold text-center text-xs py-2 border border-slate-300 uppercase tracking-wide"
                   >
-                    Domestic Sales Value Achievement
+                    Domestic Sales Value Achievement (₹ in Cr)
                   </th>
                 </tr>
 
@@ -677,15 +677,15 @@ export const DomesticSalesValueAchievementCard = () => {
               <span className="text-xs text-slate-500 mt-2 font-medium">Calculating sales numbers by category...</span>
             </div>
           ) : sheet2Data.length > 0 ? (
-            <table className="w-full text-xs border-collapse min-w-[1250px] bg-white">
+            <table className="w-full text-xs border-collapse min-w-[850px] bg-white">
               <thead>
                 {/* Banner Header Title Row */}
                 <tr>
                   <th
-                    colSpan={19}
+                    colSpan={10}
                     className="bg-[#dcfcfc] text-[#006666] font-bold text-center text-xs py-2 border border-slate-300 uppercase tracking-wide"
                   >
-                    Sales Number's
+                    Sales Number's (Replacement)
                   </th>
                 </tr>
 
@@ -703,35 +703,10 @@ export const DomesticSalesValueAchievementCard = () => {
                   >
                     Replacement
                   </th>
-                  <th
-                    colSpan={2}
-                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#fce4d6] text-slate-900"
-                  >
-                    OEM
-                  </th>
-                  <th
-                    colSpan={2}
-                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#ddebf7] text-slate-900"
-                  >
-                    STU
-                  </th>
-                  <th
-                    colSpan={2}
-                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#fff0f5] text-slate-900"
-                  >
-                    DEF
-                  </th>
-                  <th
-                    colSpan={3}
-                    className="border border-slate-300 px-3 py-1.5 font-bold text-center bg-[#f2f2f2] text-slate-900"
-                  >
-                    Domestic
-                  </th>
                 </tr>
 
                 {/* Sub-header Tier 2 */}
                 <tr className="bg-[#f8fafc] text-slate-800 text-[11px]">
-                  {/* Replacement cols */}
                   <th className="border border-slate-300 px-2 py-1 font-bold text-center whitespace-nowrap">{meta.prev_year_label}</th>
                   <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
                   <th className="border border-slate-300 px-2 py-1 font-bold text-center">Total</th>
@@ -741,23 +716,6 @@ export const DomesticSalesValueAchievementCard = () => {
                   <th className="border border-slate-300 px-2 py-1 font-bold text-center">Dist.</th>
                   <th className="border border-slate-300 px-2 py-1 font-bold text-center">Fleet</th>
                   <th className="border border-slate-300 px-2 py-1 font-bold text-center">Others</th>
-
-                  {/* OEM cols */}
-                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
-                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Actual</th>
-
-                  {/* STU cols */}
-                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
-                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Actual</th>
-
-                  {/* DEF cols */}
-                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
-                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Actual</th>
-
-                  {/* Domestic cols */}
-                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Target</th>
-                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">Actual</th>
-                  <th className="border border-slate-300 px-2 py-1 font-bold text-center">% Achv.</th>
                 </tr>
               </thead>
 
@@ -801,33 +759,6 @@ export const DomesticSalesValueAchievementCard = () => {
                       </td>
                       <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
                         {fmtCell(row.others)}
-                      </td>
-                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
-                        {fmtCell(row.oem_target)}
-                      </td>
-                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
-                        {fmtCell(row.oem_actual)}
-                      </td>
-                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
-                        {fmtCell(row.stu_target)}
-                      </td>
-                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
-                        {fmtCell(row.stu_actual)}
-                      </td>
-                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
-                        {fmtCell(row.def_target)}
-                      </td>
-                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
-                        {fmtCell(row.def_actual)}
-                      </td>
-                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono">
-                        {fmtCell(row.domestic_target)}
-                      </td>
-                      <td className="border border-slate-300 px-2 py-1.5 text-right font-mono font-semibold">
-                        {fmtCell(row.domestic_actual)}
-                      </td>
-                      <td className="border border-slate-300 px-2 py-1.5 text-center font-semibold">
-                        {row.domestic_target > 0 && row.domestic_achv_pct !== undefined ? `${Math.round(row.domestic_achv_pct)}%` : ""}
                       </td>
                     </tr>
                   );
