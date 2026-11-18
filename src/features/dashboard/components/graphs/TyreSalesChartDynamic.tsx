@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import {
   BarChart,
@@ -14,8 +14,21 @@ import {
 import { COLORS } from "./mockData";
 import { FilterSelect, useAvailableYears, useSessionId, queuedFetch } from "./dashboardHooks";
 import { defaultConfig, API_ENDPOINTS } from "@/src/services/api.config";
+import { getUserHierarchy } from "../../../../utils/userHierarchy";
 
-export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
+interface TyreSalesChartDynamicProps {
+  zone?: string | null;
+  region?: string | null;
+  lockZone?: boolean;
+  lockRegion?: boolean;
+}
+
+export const TyreSalesChartDynamic = ({
+  zone,
+  region,
+  lockZone = false,
+  lockRegion = false,
+}: TyreSalesChartDynamicProps) => {
   const {
     availableYears,
     availableZones,
@@ -25,6 +38,12 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
   } = useAvailableYears();
 
   const sessionId = useSessionId();
+
+  const userHierarchy = useMemo(() => getUserHierarchy(), []);
+  const isUserZoneRestricted = lockZone || !!userHierarchy?.isZoneRestricted;
+  const isUserRegionRestricted = lockRegion || !!userHierarchy?.isRegionRestricted;
+  const restrictedZone = zone || userHierarchy?.zone_code || null;
+  const restrictedRegion = region || userHierarchy?.region_code || null;
 
   const [tyreData, setTyreData] = useState<any[]>([]);
   const [isTyreLoading, setIsTyreLoading] = useState(true);
@@ -38,13 +57,56 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
 
   const [tyreYear, setTyreYear] = useState("ALL");
   const [tyreCustomerCategory, setTyreCustomerCategory] = useState("ALL");
-  const [tyreZone, setTyreZone] = useState("ALL");
-  const [tyreRegion, setTyreRegion] = useState("ALL");
+  const [tyreZone, setTyreZone] = useState(() => {
+    if (isUserZoneRestricted && restrictedZone && restrictedZone.toUpperCase() !== "ALL") {
+      return restrictedZone;
+    }
+    return "ALL";
+  });
+  const [tyreRegion, setTyreRegion] = useState(() => {
+    if (isUserRegionRestricted && restrictedRegion && restrictedRegion.toUpperCase() !== "ALL") {
+      return restrictedRegion;
+    }
+    return "ALL";
+  });
   const [tyreConstructionType, setTyreConstructionType] = useState("ALL");
 
+  useEffect(() => {
+    if (isUserZoneRestricted && restrictedZone && restrictedZone.toUpperCase() !== "ALL") {
+      setTyreZone(restrictedZone);
+    }
+  }, [isUserZoneRestricted, restrictedZone]);
+
+  useEffect(() => {
+    if (isUserRegionRestricted && restrictedRegion && restrictedRegion.toUpperCase() !== "ALL") {
+      setTyreRegion(restrictedRegion);
+    }
+  }, [isUserRegionRestricted, restrictedRegion]);
+
+  // Find matching zone value from availableZones if available
+  const displayZoneValue = useMemo(() => {
+    const target = isUserZoneRestricted ? (restrictedZone || tyreZone) : tyreZone;
+    if (!target || target.toUpperCase() === "ALL") return "ALL";
+    const found = availableZones.find((z: any) => {
+      const isObj = typeof z === "object" && z !== null;
+      const v = isObj ? (z.value ?? z.val ?? z.zone_code ?? "") : z;
+      const l = isObj ? (z.label ?? z.name ?? "") : z;
+      return (
+        String(v).trim().toUpperCase() === String(target).trim().toUpperCase() ||
+        String(l).trim().toUpperCase() === String(target).trim().toUpperCase()
+      );
+    });
+    if (found) {
+      const isObj = typeof found === "object" && found !== null;
+      return isObj ? (found.value ?? found.val ?? target) : found;
+    }
+    return target;
+  }, [availableZones, tyreZone, isUserZoneRestricted, restrictedZone]);
+
   // Filter regions dynamically based on selected Zone (Hierarchical / Dependent)
-  const filteredRegions = React.useMemo(() => {
-    if (!tyreZone || tyreZone.toUpperCase() === "ALL") {
+  const filteredRegions = useMemo(() => {
+    const activeZone = isUserZoneRestricted ? (restrictedZone || tyreZone) : tyreZone;
+    if (!activeZone || activeZone.toUpperCase() === "ALL") {
       return availableRegions;
     }
     return availableRegions.filter((r: any) => {
@@ -52,11 +114,67 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
       const zCode = isObj ? (r.zone_code ?? r.zone ?? "") : "";
       const val = isObj ? (r.value ?? r.val ?? "") : r;
       if (String(val).toUpperCase() === "ALL") return true;
-      return String(zCode).trim().toUpperCase() === String(tyreZone).trim().toUpperCase();
+      return (
+        String(zCode).trim().toUpperCase() === String(activeZone).trim().toUpperCase() ||
+        String(zCode).trim().toUpperCase() === String(displayZoneValue).trim().toUpperCase()
+      );
     });
-  }, [availableRegions, tyreZone]);
+  }, [availableRegions, tyreZone, isUserZoneRestricted, restrictedZone, displayZoneValue]);
+
+  // Find matching region value from filteredRegions if available
+  const displayRegionValue = useMemo(() => {
+    const target = isUserRegionRestricted ? (restrictedRegion || tyreRegion) : tyreRegion;
+    if (!target || target.toUpperCase() === "ALL") return "ALL";
+    const found = filteredRegions.find((r: any) => {
+      const isObj = typeof r === "object" && r !== null;
+      const v = isObj ? (r.value ?? r.val ?? r.region_code ?? "") : r;
+      const l = isObj ? (r.label ?? r.name ?? "") : r;
+      return (
+        String(v).trim().toUpperCase() === String(target).trim().toUpperCase() ||
+        String(l).trim().toUpperCase() === String(target).trim().toUpperCase()
+      );
+    });
+    if (found) {
+      const isObj = typeof found === "object" && found !== null;
+      return isObj ? (found.value ?? found.val ?? target) : found;
+    }
+    return target;
+  }, [filteredRegions, tyreRegion, isUserRegionRestricted, restrictedRegion]);
+
+  const zoneOptions = useMemo(() => {
+    if (isUserZoneRestricted && displayZoneValue && displayZoneValue.toUpperCase() !== "ALL") {
+      const matched = availableZones.filter((z: any) => {
+        const isObj = typeof z === "object" && z !== null;
+        const v = isObj ? (z.value ?? z.val ?? z.zone_code ?? "") : z;
+        const l = isObj ? (z.label ?? z.name ?? "") : z;
+        return (
+          String(v).trim().toUpperCase() === String(displayZoneValue).trim().toUpperCase() ||
+          String(l).trim().toUpperCase() === String(displayZoneValue).trim().toUpperCase()
+        );
+      });
+      return matched.length > 0 ? matched : [{ label: displayZoneValue, value: displayZoneValue }];
+    }
+    return availableZones;
+  }, [availableZones, isUserZoneRestricted, displayZoneValue]);
+
+  const regionOptions = useMemo(() => {
+    if (isUserRegionRestricted && displayRegionValue && displayRegionValue.toUpperCase() !== "ALL") {
+      const matched = filteredRegions.filter((r: any) => {
+        const isObj = typeof r === "object" && r !== null;
+        const v = isObj ? (r.value ?? r.val ?? r.region_code ?? "") : r;
+        const l = isObj ? (r.label ?? r.name ?? "") : r;
+        return (
+          String(v).trim().toUpperCase() === String(displayRegionValue).trim().toUpperCase() ||
+          String(l).trim().toUpperCase() === String(displayRegionValue).trim().toUpperCase()
+        );
+      });
+      return matched.length > 0 ? matched : [{ label: displayRegionValue, value: displayRegionValue }];
+    }
+    return filteredRegions;
+  }, [filteredRegions, isUserRegionRestricted, displayRegionValue]);
 
   const handleZoneChange = (e: any) => {
+    if (isUserZoneRestricted) return;
     const selectedZone = e?.target?.value ?? e;
     setTyreZone(selectedZone);
     setTyreRegion("ALL"); // Reset region to ALL whenever zone changes
@@ -71,6 +189,15 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
           setIsTyreLoading(false);
           return;
         }
+
+        const effectiveZoneToSend = isUserZoneRestricted
+          ? (restrictedZone || displayZoneValue || tyreZone)
+          : (tyreZone && tyreZone.toUpperCase() !== "ALL" ? tyreZone : "ALL");
+
+        const effectiveRegionToSend = isUserRegionRestricted
+          ? (restrictedRegion || displayRegionValue || tyreRegion)
+          : (tyreRegion && tyreRegion.toUpperCase() !== "ALL" ? tyreRegion : "ALL");
+
         const response = await queuedFetch(
           `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.TYRE_SALES_DATA}`,
           {
@@ -82,10 +209,8 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
               user_id: userId,
               year: !tyreYear || tyreYear.toUpperCase() === "ALL" ? ["ALL"] : (isNaN(Number(tyreYear)) ? [tyreYear] : [Number(tyreYear)]),
               customer_category: [tyreCustomerCategory],
-              zone: zone && zone.toLowerCase() !== "all"
-                ? [zone]
-                : (!tyreZone || tyreZone.toUpperCase() === "ALL" ? ["ALL"] : [tyreZone]),
-              region: [tyreRegion],
+              zone: effectiveZoneToSend && effectiveZoneToSend.toUpperCase() !== "ALL" ? [effectiveZoneToSend] : ["ALL"],
+              region: effectiveRegionToSend && effectiveRegionToSend.toUpperCase() !== "ALL" ? [effectiveRegionToSend] : ["ALL"],
               construction_type: [tyreConstructionType],
             }),
           },
@@ -155,6 +280,13 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
     tyreConstructionType,
     sessionId,
     zone,
+    region,
+    isUserZoneRestricted,
+    isUserRegionRestricted,
+    restrictedZone,
+    restrictedRegion,
+    displayZoneValue,
+    displayRegionValue,
   ]);
 
   return (
@@ -178,15 +310,17 @@ export const TyreSalesChartDynamic = ({ zone }: { zone?: string | null }) => {
           />
           <FilterSelect
             label="Zone"
-            value={tyreZone}
+            value={displayZoneValue}
             onChange={handleZoneChange}
-            options={availableZones}
+            options={zoneOptions}
+            disabled={isUserZoneRestricted}
           />
           <FilterSelect
             label="Region"
-            value={tyreRegion}
+            value={displayRegionValue}
             onChange={(e) => setTyreRegion(e.target.value)}
-            options={filteredRegions}
+            options={regionOptions}
+            disabled={isUserRegionRestricted}
           />
           <FilterSelect
             label="Customer Category"

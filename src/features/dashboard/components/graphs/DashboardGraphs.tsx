@@ -831,7 +831,12 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
 
       {/* 4. Sales by Zone & Top 10 Tyre Types by Sales */}
       <ZonePieChartDynamic zone={effectiveZone} />
-      <TyreSalesChartDynamic zone={effectiveZone} />
+      <TyreSalesChartDynamic
+        zone={effectiveZone}
+        region={userHierarchy?.region_code || undefined}
+        lockZone={userHierarchy?.isZoneRestricted}
+        lockRegion={userHierarchy?.isRegionRestricted}
+      />
 
       {/* 4b. Top 10 & Bottom 10 Sales Performance (Side-by-side Top 10 and Bottom 10) */}
       <TopBottomPerformanceChart />

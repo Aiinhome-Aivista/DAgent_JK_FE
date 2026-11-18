@@ -106,68 +106,42 @@ export const FilterSelect = ({
 
 
   defaultLabel = "All",
-
-
+  disabled = false,
 }: {
-
-
   label: string;
-
-
   value: string | number;
-
-
   onChange: (e: any) => void;
-
-
   options: any[];
-
-
   defaultLabel?: string;
-
-
+  disabled?: boolean;
 }) => (
-
-
   <div
-
-
-    className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 hover:bg-slate-50 transition-colors focus-within:border-slate-300 focus-within:shadow-sm"
-
-
+    className={`flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 ${
+      disabled ? "opacity-85 bg-slate-50 cursor-not-allowed" : "hover:bg-slate-50"
+    } transition-colors focus-within:border-slate-300 focus-within:shadow-sm`}
     style={{ minWidth: "130px", flexShrink: 0 }}
-
-
   >
-
-
     <span className="text-xs text-slate-400 font-medium whitespace-nowrap">
-
-
       {label}:
-
-
     </span>
-
-
     <select
-
-
       value={value}
-
-
       onChange={onChange}
-
-
-      className="text-xs font-medium text-slate-700 bg-transparent outline-none cursor-pointer w-full"
-
-
+      disabled={disabled}
+      className={`text-xs font-medium bg-transparent outline-none ${
+        disabled
+          ? "cursor-not-allowed text-indigo-700 font-semibold"
+          : "cursor-pointer text-slate-700"
+      } w-full`}
     >
-
-
       <option value="ALL">{defaultLabel}</option>
-
-
+      {disabled && value && String(value).toUpperCase() !== "ALL" && !options.some((opt: any) => {
+        const isObj = typeof opt === "object" && opt !== null;
+        const optVal = isObj ? (opt.value ?? opt.val ?? opt.val_code ?? "") : opt;
+        return String(optVal).trim().toUpperCase() === String(value).trim().toUpperCase();
+      }) && (
+        <option value={value}>{value}</option>
+      )}
       {options
         .filter((opt: any) => {
           const isObj = typeof opt === "object" && opt !== null;
