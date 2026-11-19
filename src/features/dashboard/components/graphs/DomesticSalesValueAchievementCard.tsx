@@ -24,6 +24,18 @@ interface DomesticSalesRow {
   is_total?: boolean;
 }
 
+interface DomesticZoneAchievementRow {
+  zone: string;
+  prev_year_actual_month: number;
+  prev_year_actual_mtd: number;
+  target: number;
+  actual: number;
+  achievement_pct: number;
+  sale_for_the_day: number;
+  growth_over_lysmt: number;
+  is_total?: boolean;
+}
+
 interface SalesReportByValuesRow {
   zone: string;
   prev_4w: number;
@@ -208,6 +220,7 @@ export const DomesticSalesValueAchievementCard = () => {
 
   // Dedicated Sheet 1 state
   const [sheet1Data, setSheet1Data] = useState<DomesticSalesRow[]>([]);
+  const [sheet1ZoneData, setSheet1ZoneData] = useState<DomesticZoneAchievementRow[]>([]);
   const [months, setMonths] = useState<MonthItem[]>(DEFAULT_MONTHS);
   const [selectedMonthNo, setSelectedMonthNo] = useState<number>(11);
   const [meta, setMeta] = useState<MetaInfo>({
@@ -260,8 +273,19 @@ export const DomesticSalesValueAchievementCard = () => {
       const response = await queuedFetch(url);
       const json = await response.json();
 
-      if (json.status === "success" && json.data) {
-        setSheet1Data(json.data);
+      if (json.status === "success") {
+        if (json.data && Array.isArray(json.data)) {
+          setSheet1Data(json.data);
+        } else {
+          setSheet1Data([]);
+        }
+
+        if (json.zone_data && Array.isArray(json.zone_data)) {
+          setSheet1ZoneData(json.zone_data);
+        } else {
+          setSheet1ZoneData([]);
+        }
+
         if (json.months && Array.isArray(json.months)) {
           setMonths(json.months);
         }
@@ -273,10 +297,12 @@ export const DomesticSalesValueAchievementCard = () => {
         }
       } else {
         setSheet1Data([]);
+        setSheet1ZoneData([]);
       }
     } catch (e) {
       console.error("Error fetching domestic sales value achievement", e);
       setSheet1Data([]);
+      setSheet1ZoneData([]);
     } finally {
       setIsSheet1Loading(false);
     }
@@ -526,8 +552,8 @@ export const DomesticSalesValueAchievementCard = () => {
 
         {/* Right Action Toolbar: Month Selector + Download */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Month Selector Dropdown for Sheet 1, Sheet 2 & Sheet 3 */}
-          {(activeTabIndex === 0 || activeTabIndex === 1 || activeTabIndex === 2) && (
+          {/* Month Selector Dropdown for Sheet 1, Sheet 2, Sheet 3 & Sheet 4 */}
+          {(activeTabIndex === 0 || activeTabIndex === 1 || activeTabIndex === 2 || activeTabIndex === 3) && (
             <div className="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-indigo-300 transition-all">
               <Calendar className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
               <label className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -536,7 +562,7 @@ export const DomesticSalesValueAchievementCard = () => {
               <select
                 value={selectedMonthNo}
                 onChange={handleMonthChange}
-                disabled={activeTabIndex === 0 ? isSheet1Loading : activeTabIndex === 1 ? isSheet2Loading : isSheet3Loading}
+                disabled={activeTabIndex === 0 ? (isSheet1Loading || isSheet3Loading) : activeTabIndex === 1 ? isSheet2Loading : activeTabIndex === 2 ? isSheet3Loading : isSheet4Loading}
                 className="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer pr-1"
               >
                 {months.map((m) => (

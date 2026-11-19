@@ -70,6 +70,7 @@ export const API_ENDPOINTS = {
     EXPOSURE_PCT: '/exposure-pct',
     CATEGORY_SALES: '/category-sales',
     DOMESTIC_SALES_VALUE_ACHIEVEMENT: '/domestic-sales-value-achievement',
+    ZONE_WISE_SALES_ACHIEVEMENT: '/zone-wise-sales-achievement',
     SALES_REPORT_BY_VALUES: '/sales-report-by-values',
     SALES_NUMBERS_REPORT: '/sales-numbers-report',
     SALES_SUMMARY_NO_VALUES: '/sales-summary-no-values'

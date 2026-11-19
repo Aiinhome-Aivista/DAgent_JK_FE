@@ -33,6 +33,7 @@ import { NonBilledAccountsCardDynamic } from "./NonBilledAccountsCardDynamic";
 import { OverduePieChartDynamic } from "./OverduePieChartDynamic";
 import { ExposureCardDynamic } from "./ExposureCardDynamic";
 import { DomesticSalesValueAchievementCard } from "./DomesticSalesValueAchievementCard";
+import { ZoneWiseSalesAchievementCard } from "./ZoneWiseSalesAchievementCard";
 import { getUserHierarchy } from "../../../../utils/userHierarchy";
 
 const cleanParagraphText = (text: string) => {
@@ -809,6 +810,9 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
 
       {/* 1. Summary Revised Download Table Card */}
       <DomesticSalesValueAchievementCard />
+
+      {/* 1b. Zone-Wise Sales Achievement Card */}
+      <ZoneWiseSalesAchievementCard />
 
       {/* 2. Chart 1: Sales Revenue (Plan vs Sale & Achievement) */}
       <PlanVsSaleChartDynamic
