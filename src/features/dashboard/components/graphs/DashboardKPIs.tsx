@@ -263,7 +263,8 @@ export const DashboardKPIs = () => {
     try {
       const url = `${defaultConfig.baseUrl}/default-dashboard-metrics`;
       const hierarchy = getUserHierarchy();
-      const storedUid = localStorage.getItem("user_id");
+      const storedUid =
+        localStorage.getItem("DAgent_user_id") || localStorage.getItem("user_id");
 
       const payload: Record<string, any> = {
         session_id: sessionId,
@@ -278,6 +279,9 @@ export const DashboardKPIs = () => {
       }
       if (hierarchy?.region_code) {
         payload.region = hierarchy.region_code;
+      }
+      if (hierarchy?.territory_code) {
+        payload.territory = hierarchy.territory_code;
       }
 
       if (filter) {
@@ -1002,6 +1006,10 @@ export const DashboardKPIs = () => {
                         "Attrition",
                         "New Dealer",
                         "Rotation",
+                        "Region Position",
+                        "Zone Position",
+                        "Territory Position",
+                        "Leading Region",
                       ];
 
                       if (
