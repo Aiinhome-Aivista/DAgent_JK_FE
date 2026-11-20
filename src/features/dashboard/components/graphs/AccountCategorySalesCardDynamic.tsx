@@ -6,7 +6,7 @@ import { useSessionId, queuedFetch } from "./dashboardHooks";
 import { Loader2 } from "lucide-react";
 
 
-export const AccountCategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => {
+export const AccountCategorySalesCardDynamic = ({ zone, region }: { zone?: string | null; region?: string | null }) => {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const sessionId = useSessionId();
@@ -20,7 +20,7 @@ export const AccountCategorySalesCardDynamic = ({ zone }: { zone?: string | null
           setIsLoading(false);
           return;
         }
-        const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_BY_ACCOUNT_CATEGORY}?session_id=${sessionId}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`;
+        const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.SALES_BY_ACCOUNT_CATEGORY}?session_id=${sessionId}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}${region ? `&region=${encodeURIComponent(region)}` : ''}`;
         const response = await queuedFetch(url);
         const json = await response.json();
 
@@ -28,7 +28,8 @@ export const AccountCategorySalesCardDynamic = ({ zone }: { zone?: string | null
           const mappedData = json.data
             .filter((item: any) => {
               const rawTitle = String(item.title || item.TITLE || item.label || item.category || "").trim();
-              return rawTitle && !["account category", "unknown", "0", "null", "none"].includes(rawTitle.toLowerCase());
+              const numVal = parseFloat(String(item.valCr ?? item.value ?? item.sales_value_cr ?? 0).replace(/[^0-9.]/g, ''));
+              return rawTitle && !["account category", "unknown", "0", "null", "none"].includes(rawTitle.toLowerCase()) && numVal > 0;
             })
             .map((item: any) => ({
               title: (item.title || item.TITLE || item.label || item.category || "").trim(),
@@ -46,7 +47,7 @@ export const AccountCategorySalesCardDynamic = ({ zone }: { zone?: string | null
       }
     };
     fetchData();
-  }, [sessionId, zone]);
+  }, [sessionId, zone, region]);
 
 
   return (

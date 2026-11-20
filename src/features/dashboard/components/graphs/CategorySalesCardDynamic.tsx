@@ -6,7 +6,7 @@ import { useSessionId, queuedFetch } from "./dashboardHooks";
 import { Loader2 } from "lucide-react";
 
 
-export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => {
+export const CategorySalesCardDynamic = ({ zone, region }: { zone?: string | null; region?: string | null }) => {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const sessionId = useSessionId();
@@ -20,15 +20,21 @@ export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => 
           setIsLoading(false);
           return;
         }
-        const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.CATEGORY_SALES}?session_id=${sessionId}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}`;
+        const url = `${defaultConfig.baseUrl}${API_ENDPOINTS.DASHBOARD.CATEGORY_SALES}?session_id=${sessionId}${zone ? `&zone=${encodeURIComponent(zone)}` : ''}${region ? `&region=${encodeURIComponent(region)}` : ''}`;
         const response = await queuedFetch(url);
         const json = await response.json();
 
         if (json.status === "success" && json.data) {
-          const formattedData = json.data.map((item: any) => ({
-            title: item.category || item.CATEGORY || item.category_name || item.CAT_DESC || item.cat_desc || item.title || "Category",
-            value: item.total_sales_cr !== undefined ? `₹${item.total_sales_cr} Cr` : (item.value || "0 Cr")
-          }));
+          const formattedData = json.data
+            .filter((item: any) => {
+              const rawTitle = String(item.category || item.CATEGORY || item.category_name || item.CAT_DESC || item.cat_desc || item.title || "").trim();
+              const numVal = parseFloat(String(item.total_sales_cr ?? item.valCr ?? item.value ?? 0).replace(/[^0-9.]/g, ''));
+              return rawTitle && !["0", "", "z", "null", "none"].includes(rawTitle.toLowerCase()) && numVal > 0;
+            })
+            .map((item: any) => ({
+              title: item.category || item.CATEGORY || item.category_name || item.CAT_DESC || item.cat_desc || item.title || "Category",
+              value: item.total_sales_cr !== undefined ? `₹${item.total_sales_cr} Cr` : (item.value || "0 Cr")
+            }));
           setData(formattedData);
         } else {
           setData([]);
@@ -41,7 +47,7 @@ export const CategorySalesCardDynamic = ({ zone }: { zone?: string | null }) => 
       }
     };
     fetchData();
-  }, [sessionId, zone]);
+  }, [sessionId, zone, region]);
 
 
   return (

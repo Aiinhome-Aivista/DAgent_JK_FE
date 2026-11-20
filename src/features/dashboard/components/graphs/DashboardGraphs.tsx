@@ -846,8 +846,14 @@ export const DashboardGraphs = ({ isWorkspacesLoading }: { isWorkspacesLoading?:
       <TopBottomPerformanceChart />
 
       {/* 5. Category Sales & Actual Sales by Account Category */}
-      <CategorySalesCardDynamic zone={effectiveZone} />
-      <AccountCategorySalesCardDynamic zone={effectiveZone} />
+      <CategorySalesCardDynamic
+        zone={effectiveZone}
+        region={userHierarchy?.isRegionRestricted ? (userHierarchy?.region_code || undefined) : undefined}
+      />
+      <AccountCategorySalesCardDynamic
+        zone={effectiveZone}
+        region={userHierarchy?.isRegionRestricted ? (userHierarchy?.region_code || undefined) : undefined}
+      />
     </div>
   );
 };
