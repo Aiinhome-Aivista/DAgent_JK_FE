@@ -114,7 +114,33 @@ export const PlanVsSaleChartDynamic: React.FC<PlanVsSaleChartProps> = ({
         const rawList = Array.isArray(json) ? json : (json.data || (json.status === "success" ? json.data : null));
 
         if (rawList && Array.isArray(rawList)) {
-          const mappedData = rawList.map((item: any) => {
+          let listToProcess = rawList;
+
+          // If user is restricted at zone level, guarantee that ONLY the assigned zone bar is shown!
+          if (level === "zone" && isRestricted && assignedZone) {
+            const shortZ = (getShortCode(assignedZone) || assignedZone).trim().toUpperCase();
+            const fullZ = (getFullName(assignedZone) || assignedZone).trim().toUpperCase();
+            const singleZoneList = rawList.filter((item: any) => {
+              const itemZ = String(item.zone || item.zoneCode || "").trim().toUpperCase();
+              const itemCity = String(item.city_or_zone_name || item.city || item.originalZone || "").trim().toUpperCase();
+              return itemZ === shortZ || itemZ === fullZ || itemCity === shortZ || itemCity === fullZ;
+            });
+            if (singleZoneList.length > 0) {
+              listToProcess = singleZoneList;
+            }
+          } else if (level === "region" && userHierarchy?.isRegionRestricted && assignedRegion) {
+            // If user is restricted at region level, guarantee that ONLY the assigned region bar is shown!
+            const targetR = assignedRegion.trim().toUpperCase();
+            const singleRegionList = rawList.filter((item: any) => {
+              const itemR = String(item.region || item.regionCode || item.city_or_zone_name || item.city || item.originalZone || "").trim().toUpperCase();
+              return itemR === targetR;
+            });
+            if (singleRegionList.length > 0) {
+              listToProcess = singleRegionList;
+            }
+          }
+
+          const mappedData = listToProcess.map((item: any) => {
             const rawKey = item.zone || item.region || item.territory || item.city_or_zone_name || item.city || "Unknown";
             let displayName = rawKey;
 
